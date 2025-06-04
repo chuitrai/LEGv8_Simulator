@@ -1,8 +1,7 @@
 ```
 LEGv8_Simulator/
-├── .idea/                     # Cấu hình của IntelliJ IDEA (hoặc IDE tương tự)
-├── .gitignore                 # Các file và thư mục bỏ qua bởi Git
-├── pom.xml                    # (Nếu dùng Maven) hoặc build.gradle (Nếu dùng Gradle)
+├── .idea/                     # Cấu hình của IntelliJ IDEA 
+├── .gitignore                                
 ├── README.md                  # Mô tả dự án, hướng dẫn cài đặt, sử dụng
 ├── docs/                      # Tài liệu dự án
 │   ├── architecture.md        # Mô tả kiến trúc phần mềm, các quyết định thiết kế
