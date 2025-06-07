@@ -54,7 +54,6 @@ public class InstructionDecoder {
         // The opcode here represents the B.cond family.
         addOpcode("B.cond", InstructionFormat.CB_FORMAT, 0b01010100, 8, 24, 31);
 
-
         // --- I-FORMAT --- (Opcode is 10 bits)
         // ADDI: 1001000100 (10 bits), range 1160-1161
         addOpcode("ADDI", InstructionFormat.I_FORMAT, 0b1001000100, 10, 22, 31);
@@ -66,6 +65,8 @@ public class InstructionDecoder {
         addOpcode("SUBIS", InstructionFormat.I_FORMAT, 0b1111000100, 10, 22, 31);
         // ANDI: 1001001000 (10 bits)
         addOpcode("ANDI", InstructionFormat.I_FORMAT, 0b1001001000, 10, 22, 31);
+        // ANDIS: 1111001000 (10 bits)
+        addOpcode("ANDIS", InstructionFormat.I_FORMAT, 0b1111001000, 10, 22, 31);        
         // ORRI: 1011001000 (10 bits)
         addOpcode("ORRI", InstructionFormat.I_FORMAT, 0b1011001000, 10, 22, 31);
         // EORI: 1101001000 (10 bits)
@@ -89,11 +90,7 @@ public class InstructionDecoder {
         addOpcode("LDURB", InstructionFormat.D_FORMAT, 0b00111000010, 11, 21, 31);
         // STURB: 00111000000 (11 bits)
         addOpcode("STURB", InstructionFormat.D_FORMAT, 0b00111000000, 11, 21, 31);
-        // LDXR: 11001000010 (Load Exclusive - Assuming D for simplicity, real ARMv8 might be different)
-        addOpcode("LDXR", InstructionFormat.D_FORMAT, 0b11001000010, 11, 21, 31);
-        // STXR: 11001000000 (Store Exclusive)
-        addOpcode("STXR", InstructionFormat.D_FORMAT, 0b11001000000, 11, 21, 31);
-
+       
 
         // --- R-FORMAT --- (Opcode is 11 bits)
         // ADD: 10001011000 (11 bits), range 1112
@@ -116,7 +113,6 @@ public class InstructionDecoder {
         addOpcode("LSL", InstructionFormat.R_FORMAT, 0b11010011011, 11, 21, 31); // Actually checks bits 21-31, shamt is used.
         // LSR: 11010011010
         addOpcode("LSR", InstructionFormat.R_FORMAT, 0b11010011010, 11, 21, 31);
-        // ASR: 11010011000 (Not on slide, added for completeness)
         // BR: 11010110000
         addOpcode("BR", InstructionFormat.R_FORMAT, 0b11010110000, 11, 21, 31);
 
