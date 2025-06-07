@@ -99,7 +99,7 @@ public class InstructionDecoder {
         // ADD: 10001011000 (11 bits), range 1112
         addOpcode("ADD", InstructionFormat.R_FORMAT, 0b10001011000, 11, 21, 31);
         // ADDS: 10101011000
-        addOpcode("ADDS", InstructionFormat.R_FORMAT, 0b10101011000, 11, 21, 31);
+        addOpcode("ADDS", InstructionFormat.R_FORMAT, 0b10001011001, 11, 21, 31);
         // SUB: 11001011000
         addOpcode("SUB", InstructionFormat.R_FORMAT, 0b11001011000, 11, 21, 31);
         // SUBS: 11101011000
@@ -130,14 +130,11 @@ public class InstructionDecoder {
     /**
      * Helper method to populate the opcode table.
      * The key in OPCODE_TABLE is the extracted opcode value itself.
-     * This assumes that opcodes of different lengths won't collide after extraction.
-     * For a more robust system, you might need a more complex key or multiple tables.
      */
     private static void addOpcode(String mnemonic, InstructionFormat format, int opcodePattern, int opcodeSize, int startBit, int endBit) {
         // The key could be the pattern itself if sizes are handled carefully, or a range.
         // For this example, we'll use the pattern directly.
-        // This simplistic approach assumes opcodes of different lengths are distinct enough
-        // or handled by the order of checks in the decode method.
+        // This simplistic approach assumes opcodes of different lengths are distinct enough or handled by the order of checks in the decode method.
         OPCODE_TABLE.put(opcodePattern, new OpcodeInfo(mnemonic, format, opcodePattern, opcodeSize));
     }
 
