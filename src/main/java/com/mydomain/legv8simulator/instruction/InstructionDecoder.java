@@ -34,62 +34,58 @@ public class InstructionDecoder {
 
     // Khối static để điền dữ liệu vào các bảng tra cứu
     static {
-    // --- B-FORMAT (6-bit opcode, bits 31-26) ---
-    // Các lệnh này không có biến thể 'S'
-    TABLE_OPCODE_6_BIT.put(0b000101, new OpcodeInfo("B", InstructionFormat.B_FORMAT, false));
-    TABLE_OPCODE_6_BIT.put(0b100101, new OpcodeInfo("BL", InstructionFormat.B_FORMAT, false));
+        // --- B-FORMAT (6-bit opcode, bits 31-26) ---
+        TABLE_OPCODE_6_BIT.put(0b000101, new OpcodeInfo("B", InstructionFormat.B_FORMAT, false));
+        TABLE_OPCODE_6_BIT.put(0b100101, new OpcodeInfo("BL", InstructionFormat.B_FORMAT, false));
 
-    // --- CB-FORMAT (8-bit opcode, bits 31-24) ---
-    // Các lệnh này không có biến thể 'S'
-    TABLE_OPCODE_8_BIT.put(0b10110100, new OpcodeInfo("CBZ", InstructionFormat.CB_FORMAT, false));
-    TABLE_OPCODE_8_BIT.put(0b10110101, new OpcodeInfo("CBNZ", InstructionFormat.CB_FORMAT, false));
-    // B.cond dùng opcode này như một "họ lệnh"
-    TABLE_OPCODE_8_BIT.put(0b01010100, new OpcodeInfo("B.cond", InstructionFormat.CB_FORMAT, false));
+        // --- CB-FORMAT (8-bit opcode, bits 31-24) ---
+        TABLE_OPCODE_8_BIT.put(0b10110100, new OpcodeInfo("CBZ", InstructionFormat.CB_FORMAT, false));
+        TABLE_OPCODE_8_BIT.put(0b10110101, new OpcodeInfo("CBNZ", InstructionFormat.CB_FORMAT, false));
+        TABLE_OPCODE_8_BIT.put(0b01010100, new OpcodeInfo("B.cond", InstructionFormat.CB_FORMAT, false));
 
-    // --- IM-FORMAT (9-bit opcode, bits 31-23) ---
-    // MOVZ/MOVK không cập nhật cờ
-    TABLE_OPCODE_9_BIT.put(0b110100101, new OpcodeInfo("MOVZ", InstructionFormat.IM_FORMAT, false));
-    TABLE_OPCODE_9_BIT.put(0b111100101, new OpcodeInfo("MOVK", InstructionFormat.IM_FORMAT, false));
+        // --- IM-FORMAT (9-bit opcode, bits 31-23) ---
+        TABLE_OPCODE_9_BIT.put(0b110100101, new OpcodeInfo("MOVZ", InstructionFormat.IM_FORMAT, false));
+        TABLE_OPCODE_9_BIT.put(0b111100101, new OpcodeInfo("MOVK", InstructionFormat.IM_FORMAT, false));
 
-    // --- I-FORMAT (10-bit opcode, bits 31-22) ---
-    // Lưu ý: Key là opcode đã được dịch phải 1 bit (loại bỏ bit S) để gộp ADDI và ADDIS
-    int addi_base_op = 0b1001000100 >> 1; // 0b100100010
-    int subi_base_op = 0b1101000100 >> 1; // 0b110100010
-    int andi_base_op = 0b1001001000 >> 1; // 0b100100100
-    
-    // Đã sửa lại key và thêm 'hasSetFlagsVariant'
-    TABLE_OPCODE_10_BIT.put(addi_base_op, new OpcodeInfo("ADD", InstructionFormat.I_FORMAT, true));  // ADD(I/IS)
-    TABLE_OPCODE_10_BIT.put(subi_base_op, new OpcodeInfo("SUB", InstructionFormat.I_FORMAT, true));  // SUB(I/IS)
-    TABLE_OPCODE_10_BIT.put(andi_base_op, new OpcodeInfo("AND", InstructionFormat.I_FORMAT, true));  // AND(I/IS)
+        // --- I-FORMAT (10-bit opcode, bits 31-22) ---
+        // Lưu ý: Key là opcode đã được dịch phải 1 bit (loại bỏ bit S) để gộp ADDI và ADDIS
+        int addi_base_op = 0b1001000100 >> 1; // 0b100100010
+        int subi_base_op = 0b1101000100 >> 1; // 0b110100010
+        int andi_base_op = 0b1001001000 >> 1; // 0b100100100
+        
+        // Đã sửa lại key và thêm 'hasSetFlagsVariant'
+        TABLE_OPCODE_10_BIT.put(addi_base_op, new OpcodeInfo("ADD", InstructionFormat.I_FORMAT, true));  // ADD(I/IS)
+        TABLE_OPCODE_10_BIT.put(subi_base_op, new OpcodeInfo("SUB", InstructionFormat.I_FORMAT, true));  // SUB(I/IS)
+        TABLE_OPCODE_10_BIT.put(andi_base_op, new OpcodeInfo("AND", InstructionFormat.I_FORMAT, true));  // AND(I/IS)
 
-    // Các lệnh này không có biến thể 'S', giữ nguyên key 10 bit
-    TABLE_OPCODE_10_BIT.put(0b1011001000, new OpcodeInfo("ORR", InstructionFormat.I_FORMAT, false)); // ORRI
-    TABLE_OPCODE_10_BIT.put(0b1101001000, new OpcodeInfo("EOR", InstructionFormat.I_FORMAT, false)); // EORI
+        // Các lệnh này không có biến thể 'S', giữ nguyên key 10 bit
+        TABLE_OPCODE_10_BIT.put(0b1011001000, new OpcodeInfo("ORR", InstructionFormat.I_FORMAT, false)); // ORRI
+        TABLE_OPCODE_10_BIT.put(0b1101001000, new OpcodeInfo("EOR", InstructionFormat.I_FORMAT, false)); // EORI
 
-    // --- R-FORMAT & D-FORMAT (11-bit opcode, bits 31-21) ---
-    
-    // R-FORMAT
-    TABLE_OPCODE_11_BIT.put(0b10001011000, new OpcodeInfo("ADD", InstructionFormat.R_FORMAT, true));
-    TABLE_OPCODE_11_BIT.put(0b11001011000, new OpcodeInfo("SUB", InstructionFormat.R_FORMAT, true));
-    TABLE_OPCODE_11_BIT.put(0b10001010000, new OpcodeInfo("AND", InstructionFormat.R_FORMAT, true));
-    TABLE_OPCODE_11_BIT.put(0b10101010000, new OpcodeInfo("ORR", InstructionFormat.R_FORMAT, false)); // ORR không có 'S' trong bảng của bạn
-    TABLE_OPCODE_11_BIT.put(0b11001010000, new OpcodeInfo("EOR", InstructionFormat.R_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b10011011000, new OpcodeInfo("MUL", InstructionFormat.R_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b11010011011, new OpcodeInfo("LSL", InstructionFormat.R_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b11010011010, new OpcodeInfo("LSR", InstructionFormat.R_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b11010011000, new OpcodeInfo("ASR", InstructionFormat.R_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b11010110000, new OpcodeInfo("BR", InstructionFormat.R_FORMAT, false));
+        // --- R-FORMAT & D-FORMAT (11-bit opcode, bits 31-21) ---
+        
+        // R-FORMAT
+        TABLE_OPCODE_11_BIT.put(0b10001011000, new OpcodeInfo("ADD", InstructionFormat.R_FORMAT, true));
+        TABLE_OPCODE_11_BIT.put(0b11001011000, new OpcodeInfo("SUB", InstructionFormat.R_FORMAT, true));
+        TABLE_OPCODE_11_BIT.put(0b10001010000, new OpcodeInfo("AND", InstructionFormat.R_FORMAT, true));
+        TABLE_OPCODE_11_BIT.put(0b10101010000, new OpcodeInfo("ORR", InstructionFormat.R_FORMAT, false)); // ORR không có 'S' trong bảng của bạn
+        TABLE_OPCODE_11_BIT.put(0b11001010000, new OpcodeInfo("EOR", InstructionFormat.R_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b10011011000, new OpcodeInfo("MUL", InstructionFormat.R_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b11010011011, new OpcodeInfo("LSL", InstructionFormat.R_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b11010011010, new OpcodeInfo("LSR", InstructionFormat.R_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b11010011000, new OpcodeInfo("ASR", InstructionFormat.R_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b11010110000, new OpcodeInfo("BR", InstructionFormat.R_FORMAT, false));
 
-    // D-FORMAT (không có biến thể 'S')
-    TABLE_OPCODE_11_BIT.put(0b11111000010, new OpcodeInfo("LDUR", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b11111000000, new OpcodeInfo("STUR", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b10111000100, new OpcodeInfo("LDURSW", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b10111000000, new OpcodeInfo("STURW", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b01111000010, new OpcodeInfo("LDURH", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b01111000000, new OpcodeInfo("STURH", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b00111000010, new OpcodeInfo("LDURB", InstructionFormat.D_FORMAT, false));
-    TABLE_OPCODE_11_BIT.put(0b00111000000, new OpcodeInfo("STURB", InstructionFormat.D_FORMAT, false));
-}
+        // D-FORMAT (không có biến thể 'S')
+        TABLE_OPCODE_11_BIT.put(0b11111000010, new OpcodeInfo("LDUR", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b11111000000, new OpcodeInfo("STUR", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b10111000100, new OpcodeInfo("LDURSW", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b10111000000, new OpcodeInfo("STURW", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b01111000010, new OpcodeInfo("LDURH", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b01111000000, new OpcodeInfo("STURH", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b00111000010, new OpcodeInfo("LDURB", InstructionFormat.D_FORMAT, false));
+        TABLE_OPCODE_11_BIT.put(0b00111000000, new OpcodeInfo("STURB", InstructionFormat.D_FORMAT, false));
+    }
 
     /**
      * Phương thức chính, giải mã mã máy.
@@ -159,6 +155,7 @@ public class InstructionDecoder {
         int shamt = BitUtils.extractBits(mc, 10, 15);
         int rn = BitUtils.extractBits(mc, 5, 9);
         int rd = BitUtils.extractBits(mc, 0, 4);
+        System.out.println("Decoded R-format: " + mnemonic + " (opcode: " + opcode + ", rd: " + rd + ", rn: " + rn + ", rm: " + rm + ", shamt: " + shamt + ")");
         
         return new RFormatInstruction(mc, mnemonic, opcode, rd, rn, rm, shamt);
     }

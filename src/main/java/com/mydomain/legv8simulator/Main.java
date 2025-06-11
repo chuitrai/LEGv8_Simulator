@@ -1,17 +1,27 @@
-// src/main/java/com/yourdomain/legv8simulator/SimulatorApp.java
 package main.java.com.mydomain.legv8simulator;
 
-import main.java.com.mydomain.legv8simulator.core.*;
+import main.java.com.mydomain.legv8simulator.core.CPU;
+import main.java.com.mydomain.legv8simulator.core.Memory;
 
-public class SimulatorApp {
+public class Main {
+
     public static void main(String[] args) {
-        long memorySize = 1024 * 1024; // 1MB bộ nhớ
-        Memory memory = new Memory(memorySize);
-        CPU cpu = new CPU(memory);
+        // 1. Khởi tạo các thành phần phần cứng
+        Memory memory = new Memory(); // Dùng kích thước mặc định
+        CPU cpu = new CPU();
 
-        // Chương trình mẫu đơn giản (ví dụ: ADDI X1, X0, #5; ADD X2, X1, X1; LDUR X3, [X0, #0])
-        // Đây là các giá trị mã máy HEX của các lệnh LEGv8
-        // Bạn cần tự dịch hoặc dùng một công cụ assembler để tạo ra các giá trị này
+        // 2. Khởi tạo trình giả lập
+        Simulator simulator = new Simulator(cpu, memory);
+
+        // 3. Tạo một chương trình mẫu
+        // Ví dụ:
+        // 0x00: ADDI X1, XZR, #100    ; X1 = 100
+        // 0x04: ADDI X2, XZR, #50     ; X2 = 50
+        // 0x08: SUBS XZR, X1, X2      ; CMP X1, X2 -> 100 - 50. Cờ N=0, Z=0.
+        // 0x0C: B.GT 0x14             ; Vì 100 > 50 (signed), (Z=0 AND N==V) -> true, nhảy tới 0x14
+        // 0x10: ADD X3, XZR, XZR      ; Lệnh này sẽ bị bỏ qua
+        // 0x14: STUR X1, [XZR, #200]  ; Lưu X1 (100) vào địa chỉ 200
+        // 0x18: HALT
         int[] program = {
             0x8B010022, // ADD X2, X1, X1 (Giả sử X1 chứa giá trị, ví dụ X1=10, X2=20 sau lệnh này)
             0x8B210022, // ADDS X2, X1, X1 (Giả sử X1=0x7FFFFFFFFFFFFFFF, X2 sẽ tràn và các cờ sẽ được đặt)
@@ -77,13 +87,8 @@ public class SimulatorApp {
 
             0x00000000 // Một lệnh dừng hoặc NOP ở cuối
         };
-        // Đặt các lệnh ở địa chỉ 0 trong bộ nhớ
-        cpu.loadProgram(0, program);
-
-        // Chạy CPU
-        cpu.run(100); // Chạy tối đa 100 lệnh
-
-        // In trạng thái cuối cùng của các thanh ghi
-        cpu.printRegisters();
+        
+        simulator.loadProgram(0x00, program);
+        simulator.run(8); // Chạy tối đa 50 lệnh
     }
 }
