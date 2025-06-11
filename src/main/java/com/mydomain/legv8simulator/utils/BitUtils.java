@@ -285,4 +285,17 @@ public final class BitUtils {
         return (int)value;
     }
 
+    /**
+     * Kiểm tra xem một bit cụ thể có được bật (set to 1) hay không.
+     * @param number Số cần kiểm tra.
+     * @param bitPosition Vị trí của bit (tính từ 0).
+     * @return true nếu bit được bật, ngược lại là false.
+     */
+    public static boolean isBitSet(int number, int bitPosition) {
+        if (bitPosition < 0 || bitPosition > 31) {
+            throw new IllegalArgumentException("Bit position must be between 0 and 31.");
+        }
+        return ((number >> bitPosition) & 1) == 1;
+    }
+
 }
