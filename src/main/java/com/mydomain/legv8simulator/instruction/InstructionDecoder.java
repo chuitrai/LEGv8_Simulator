@@ -72,6 +72,9 @@ public class InstructionDecoder {
         TABLE_OPCODE_11_BIT.put(0b11010011010, new OpcodeInfo("LSR", InstructionFormat.R_FORMAT));
         TABLE_OPCODE_11_BIT.put(0b11010011100, new OpcodeInfo("ASR", InstructionFormat.R_FORMAT));
         TABLE_OPCODE_11_BIT.put(0b11010110010, new OpcodeInfo("BR", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10011010110, new OpcodeInfo("SDIV", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10011010111, new OpcodeInfo("UDIV", InstructionFormat.R_FORMAT));
+
 
         // D-FORMAT
         TABLE_OPCODE_11_BIT.put(0b11111000010, new OpcodeInfo("LDUR", InstructionFormat.D_FORMAT));
@@ -88,8 +91,6 @@ public class InstructionDecoder {
 
     public Instruction decode(int machineCode) {
         OpcodeInfo info;
-
-        System.out.println("--->" + BitUtils.toBinaryString32(machineCode));
 
         // Ưu tiên 1: Opcode 11-bit (R, D)
 
@@ -173,8 +174,6 @@ public class InstructionDecoder {
         int opcode = BitUtils.extractBits(mc, 24, 31);
         String finalMnemonic = info.mnemonic;
         int rtOrCond = BitUtils.extractBits(mc, 0, 9);
-        System.out.println("CBFormat: " + finalMnemonic + ", rtOrCond: " + rtOrCond);
-
         if ("B.cond".equals(finalMnemonic)) {
             finalMnemonic = getBranchConditionMnemonic(rtOrCond);
         }

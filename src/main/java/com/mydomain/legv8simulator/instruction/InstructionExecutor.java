@@ -13,10 +13,12 @@ public class InstructionExecutor {
 
     private final CPU cpu;
     private final Memory memory;
+    private final ALU alu; // Thêm ALU vào executor
 
     public InstructionExecutor(CPU cpu, Memory memory) {
         this.cpu = cpu;
         this.memory = memory;
+        this.alu = new ALU(); // Khởi tạo ALU để thực hiện các phép toán
     }
 
     /**
@@ -25,23 +27,22 @@ public class InstructionExecutor {
      * Các lệnh rẽ nhánh sẽ tự ghi đè PC nếu cần.
      * @param instruction Đối tượng lệnh đã được giải mã.
      */
-    public void execute(Instruction instruction) {
-        long currentPC = cpu.getPC().getValue();
+    public void execute(Instruction instruction, long currentPC) {
+        // PC sẽ được cập nhật trong các hàm con.
+        // Mặc định, nó sẽ là currentPC + 4 nếu không phải lệnh rẽ nhánh.
 
         if (instruction instanceof RFormatInstruction) {
-            executeRFormat((RFormatInstruction) instruction);
+            executeRFormat((RFormatInstruction) instruction, currentPC);
         } else if (instruction instanceof IFormatInstruction) {
-            executeIFormat((IFormatInstruction) instruction);
+            executeIFormat((IFormatInstruction) instruction, currentPC);
         } else if (instruction instanceof DFormatInstruction) {
-            executeDFormat((DFormatInstruction) instruction);
+            executeDFormat((DFormatInstruction) instruction, currentPC);
         } else if (instruction instanceof BFormatInstruction) {
-            // Lệnh B/BL cần PC của lệnh hiện tại để tính toán, nên truyền vào
             executeBFormat((BFormatInstruction) instruction, currentPC);
         } else if (instruction instanceof CBFormatInstruction) {
-            // Lệnh CB cũng cần PC của lệnh hiện tại
             executeCBFormat((CBFormatInstruction) instruction, currentPC);
         } else if (instruction instanceof IMFormatInstruction) {
-            executeIMFormat((IMFormatInstruction) instruction);
+            executeIMFormat((IMFormatInstruction) instruction, currentPC);
         } else if (instruction instanceof UnknownInstruction) {
             handleUnknownInstruction((UnknownInstruction) instruction);
         }
@@ -50,114 +51,140 @@ public class InstructionExecutor {
     // =========================================================================
     // I. Arithmetic & Logical Instructions (R-Format)
     // =========================================================================
-    private void executeRFormat(RFormatInstruction i) {
+     private void executeRFormat(RFormatInstruction i, long currentPC) {
         long rnVal = cpu.getRegisterFile().read(i.getRn());
         long rmVal = cpu.getRegisterFile().read(i.getRm());
-        long result;
+        ALUResult aluResult;
         String mnemonic = i.getOpcodeMnemonic();
+
+        // Mặc định PC tiếp theo là lệnh tuần tự
+        long nextPC = currentPC + 4;
 
         switch (mnemonic) {
             case "ADD":
+                aluResult = alu.add(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "ADDS":
-                result = rnVal + rmVal;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                if (mnemonic.endsWith("S")) updateFlagsForAdd(result, rnVal, rmVal);
+                aluResult = alu.add(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                cpu.getFlagsRegister().updateFlags(aluResult);
                 break;
             case "SUB":
+                aluResult = alu.subtract(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "SUBS":
-                result = rnVal - rmVal;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                if (mnemonic.endsWith("S")) updateFlagsForSub(result, rnVal, rmVal);
+                aluResult = alu.subtract(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                cpu.getFlagsRegister().updateFlags(aluResult);
                 break;
             case "MUL":
-                result = rnVal * rmVal;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                break; // MUL không cập nhật cờ
+                aluResult = alu.multiply(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
+            case "SDIV":
+            case "UDIV":
+                try {
+                    if (mnemonic.equals("SDIV")) {
+                        aluResult = alu.signedDivide(rnVal, rmVal);
+                    } else {
+                        aluResult = alu.unsignedDivide(rnVal, rmVal);
+                    }
+                    cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                } catch (ArithmeticException e) {
+                    System.err.println("Error at PC 0x" + Long.toHexString(currentPC) + ": " + e.getMessage());
+                    // Xử lý lỗi: ghi 0 vào thanh ghi đích và bật cờ Overflow
+                    cpu.getRegisterFile().write(i.getRd(), 0);
+                    cpu.getFlagsRegister().setV(true);
+                }
+                break;
             case "AND":
+                aluResult = alu.and(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "ANDS":
-                result = rnVal & rmVal;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                if (mnemonic.endsWith("S")) updateFlagsNZ(result);
+                aluResult = alu.and(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                cpu.getFlagsRegister().updateNZ(aluResult.getResult());
                 break;
             case "ORR":
-                result = rnVal | rmVal;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                break; // ORR không cập nhật cờ
+                aluResult = alu.or(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "EOR":
-                result = rnVal ^ rmVal;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                break; // EOR không cập nhật cờ
+                aluResult = alu.xor(rnVal, rmVal);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "LSL":
-                // shamt được lấy từ trường shamt của lệnh R-format
-                result = rnVal << i.getShamt();
-                cpu.getRegisterFile().write(i.getRd(), result);
+                aluResult = alu.logicalShiftLeft(rnVal, i.getShamt());
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
                 break;
             case "LSR":
-                // Dịch phải logic (unsigned)
-                result = rnVal >>> i.getShamt();
-                cpu.getRegisterFile().write(i.getRd(), result);
+                aluResult = alu.logicalShiftRight(rnVal, i.getShamt());
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
                 break;
             case "ASR":
-                // Dịch phải số học (signed)
-                result = rnVal >> i.getShamt();
-                cpu.getRegisterFile().write(i.getRd(), result);
+                aluResult = alu.arithmeticShiftRight(rnVal, i.getShamt());
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
                 break;
             case "BR":
-                // Ghi đè PC đã được tăng lên 4 ở trên
-                cpu.getPC().setValue(rnVal);
+                nextPC = rnVal; // Ghi đè PC tiếp theo
                 break;
             default:
                 throw new IllegalArgumentException("Unhandled R-format mnemonic: " + mnemonic);
         }
+        cpu.getPC().setValue(nextPC);
     }
 
-    // =========================================================================
-    // I. Arithmetic & Logical Instructions (I-Format)
-    // =========================================================================
-    private void executeIFormat(IFormatInstruction i) {
+    private void executeIFormat(IFormatInstruction i, long currentPC) {
         long rnVal = cpu.getRegisterFile().read(i.getRn());
-        long imm = i.getImmediate(); // Immediate đã được sign-extended
-        long result;
+        long imm = i.getImmediate();
+        ALUResult aluResult;
         String mnemonic = i.getOpcodeMnemonic();
 
         switch (mnemonic) {
             case "ADDI":
+                aluResult = alu.add(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "ADDIS":
-                result = rnVal + imm;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                if (mnemonic.endsWith("S")) updateFlagsForAdd(result, rnVal, imm);
+                aluResult = alu.add(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                cpu.getFlagsRegister().updateFlags(aluResult);
                 break;
             case "SUBI":
-            case "SUBIS":
-                result = rnVal - imm;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                if (mnemonic.endsWith("S")) updateFlagsForSub(result, rnVal, imm);
+                aluResult = alu.subtract(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
                 break;
-            case "ANDI": // ANDI tự động cập nhật cờ theo đặc tả
-                result = rnVal & imm;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                updateFlagsNZ(result);
+            case "SUBIS":
+                aluResult = alu.subtract(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                cpu.getFlagsRegister().updateFlags(aluResult);
+                break;
+            case "ANDI":
+                aluResult = alu.and(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                cpu.getFlagsRegister().updateNZ(aluResult.getResult());
                 break;
             case "ORRI":
-                result = rnVal | imm;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                break; // ORRI không cập nhật cờ
+                aluResult = alu.or(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             case "EORI":
-                result = rnVal ^ imm;
-                cpu.getRegisterFile().write(i.getRd(), result);
-                break; // EORI không cập nhật cờ
+                aluResult = alu.xor(rnVal, imm);
+                cpu.getRegisterFile().write(i.getRd(), aluResult.getResult());
+                break;
             default:
                 throw new IllegalArgumentException("Unhandled I-format mnemonic: " + mnemonic);
         }
+        cpu.getPC().setValue(currentPC + 4);
     }
 
 
-    // =========================================================================
-    // III. Data Transfer Instructions (D-Format)
-    // =========================================================================
-    private void executeDFormat(DFormatInstruction i) {
+    private void executeDFormat(DFormatInstruction i, long currentPC) {
         long baseAddr = cpu.getRegisterFile().read(i.getRn());
-        long offset = i.getDtAddress(); // Đã được sign-extended
+        long offset = i.getDtAddress();
         long effectiveAddress = baseAddr + offset;
 
         switch (i.getOpcodeMnemonic()) {
@@ -168,22 +195,19 @@ public class InstructionExecutor {
                 memory.storeDoubleWord(effectiveAddress, cpu.getRegisterFile().read(i.getRt()));
                 break;
             case "LDURSW":
-                int wordVal = memory.loadWord(effectiveAddress);
-                cpu.getRegisterFile().write(i.getRt(), (long)wordVal); // Java's cast sign-extends int to long
+                cpu.getRegisterFile().write(i.getRt(), (long)memory.loadWord(effectiveAddress));
                 break;
             case "STURW":
                 memory.storeWord(effectiveAddress, (int)cpu.getRegisterFile().read(i.getRt()));
                 break;
             case "LDURH":
-                short halfVal = memory.loadHalfWord(effectiveAddress);
-                cpu.getRegisterFile().write(i.getRt(), halfVal & 0xFFFFL); // Zero-extend
+                cpu.getRegisterFile().write(i.getRt(), memory.loadHalfWord(effectiveAddress) & 0xFFFFL);
                 break;
             case "STURH":
                 memory.storeHalfWord(effectiveAddress, (short)cpu.getRegisterFile().read(i.getRt()));
                 break;
             case "LDURB":
-                byte byteVal = memory.loadByte(effectiveAddress);
-                cpu.getRegisterFile().write(i.getRt(), byteVal & 0xFFL); // Zero-extend
+                cpu.getRegisterFile().write(i.getRt(), memory.loadByte(effectiveAddress) & 0xFFL);
                 break;
             case "STURB":
                 memory.storeByte(effectiveAddress, (byte)cpu.getRegisterFile().read(i.getRt()));
@@ -191,11 +215,9 @@ public class InstructionExecutor {
             default:
                 throw new IllegalArgumentException("Unhandled D-format mnemonic: " + i.getOpcodeMnemonic());
         }
+        cpu.getPC().setValue(currentPC + 4);
     }
 
-    // =========================================================================
-    // IV. Conditional Branch Instructions (CB-Format)
-    // =========================================================================
     private void executeCBFormat(CBFormatInstruction i, long currentPC) {
         long offset = (long) i.getCondBrAddress() * 4;
         boolean takeBranch = false;
@@ -211,28 +233,22 @@ public class InstructionExecutor {
 
         if (takeBranch) {
             cpu.getPC().setValue(currentPC + offset);
+        } else {
+            cpu.getPC().setValue(currentPC + 4);
         }
     }
 
-    // =========================================================================
-    // V. Unconditional Branch Instructions (B-Format)
-    // =========================================================================
     private void executeBFormat(BFormatInstruction i, long currentPC) {
         long offset = (long) i.getBrAddress() * 4;
 
         if ("BL".equals(i.getOpcodeMnemonic())) {
-            // Ghi địa chỉ của lệnh TIẾP THEO vào Link Register (X30)
             cpu.getRegisterFile().write(Constants.LR_REGISTER_INDEX, currentPC + 4);
         }
         
-        // Cập nhật PC để nhảy
         cpu.getPC().setValue(currentPC + offset);
     }
     
-    // =========================================================================
-    // VI. Move Wide Instructions (IM-Format)
-    // =========================================================================
-    private void executeIMFormat(IMFormatInstruction i) {
+    private void executeIMFormat(IMFormatInstruction i, long currentPC) {
         long imm16 = i.getImmediate();
         int shift = i.getHw() * 16;
         int rd = i.getRd();
@@ -245,57 +261,16 @@ public class InstructionExecutor {
             long newVal = (currentVal & ~mask) | (imm16 << shift);
             cpu.getRegisterFile().write(rd, newVal);
         }
+        cpu.getPC().setValue(currentPC + 4);
     }
     
-    // =========================================================================
-    // VII. System and Unknown Instructions
-    // =========================================================================
     private void handleUnknownInstruction(UnknownInstruction i) {
-        // Ném một ngoại lệ để báo cho Simulator rằng có lỗi xảy ra.
-        // Simulator có thể bắt (catch) và quyết định dừng chương trình.
         throw new UnsupportedOperationException(
             "Execution failed: Encountered an unknown instruction with machine code: 0x" + 
             Integer.toHexString(i.getMachineCode())
         );
     }
 
-    // =========================================================================
-    // Helper Methods for Flag Updates
-    // =========================================================================
-
-   /**
-     * Cập nhật cờ N (Negative) và Z (Zero) dựa trên kết quả của một phép toán.
-     * Các phép toán luận lý như ANDS thường chỉ cập nhật hai cờ này.
-     * @param result Kết quả 64-bit của phép toán.
-     */
-    private void updateFlagsNZ(long result) {
-        CPU.FlagsRegister flags = cpu.getFlagsRegister();
-        flags.updateNZ(result);
-    }
-
-    /**
-     * Cập nhật đầy đủ 4 cờ (N, Z, C, V) cho một phép CỘNG.
-     * @param result Kết quả của phép cộng.
-     * @param op1 Toán hạng thứ nhất.
-     * @param op2 Toán hạng thứ hai.
-     */
-    private void updateFlagsForAdd(long result, long op1, long op2) {
-        CPU.FlagsRegister flags = cpu.getFlagsRegister();
-        flags.updateNZ(result);
-        flags.updateCVForAdd(op1, op2, result);
-    }
-
-    /**
-     * Cập nhật đầy đủ 4 cờ (N, Z, C, V) cho một phép TRỪ.
-     * @param result Kết quả của phép trừ.
-     * @param op1 Toán hạng thứ nhất (bị trừ).
-     * @param op2 Toán hạng thứ hai (số trừ).
-     */
-    private void updateFlagsForSub(long result, long op1, long op2) {
-        CPU.FlagsRegister flags = cpu.getFlagsRegister();
-        flags.updateNZ(result);
-        flags.updateCVForSub(op1, op2, result);
-    }
 
     /**
      * Kiểm tra xem điều kiện rẽ nhánh có được thỏa mãn hay không,

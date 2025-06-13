@@ -32,6 +32,8 @@ public class Main {
             0xD1001421, // SUBI X1, X1, #5 (Giả sử X1=10, X1=5 sau lệnh này)
             0xD1201421, // SUBIS X1, X1, #5 (Giả sử X1=5, X1=0 và cờ Z được đặt)
             0x9B010022, // MUL X2, X1, X1 (Giả sử X1=5, X2=25 sau lệnh này)
+            0x9AC700C5, // SDIV X5, X6, X7 // Giả sử X6=10, X7=2, X5=5 sau lệnh này
+            0x9ACA0128, // UDIV X5, X6, X7 // Giả sử X6=10, X7=2, X5=5 sau lệnh này
 
             // II. Lệnh Logical
             0x8A010022, // AND X2, X1, X1 (Giả sử X1=0b1010, X2=0b1010 sau lệnh này)

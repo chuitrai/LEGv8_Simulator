@@ -5,6 +5,8 @@ import main.java.com.mydomain.legv8simulator.core.Memory;
 import main.java.com.mydomain.legv8simulator.instruction.Instruction;
 import main.java.com.mydomain.legv8simulator.instruction.InstructionDecoder;
 import main.java.com.mydomain.legv8simulator.instruction.InstructionExecutor;
+import main.java.com.mydomain.legv8simulator.instruction.InstructionFormat;
+import main.java.com.mydomain.legv8simulator.gui.CycleState;
 
 /**
  * Lớp Simulator là trái tim của trình giả lập.
@@ -17,6 +19,7 @@ public class Simulator {
     private final Memory memory;
     private final InstructionDecoder decoder;
     private final InstructionExecutor executor;
+    private final CycleState cycleState;
 
     private boolean isRunning = false;
     private int instructionCount = 0;
@@ -31,6 +34,7 @@ public class Simulator {
         this.memory = memory;
         this.decoder = new InstructionDecoder();
         this.executor = new InstructionExecutor(cpu, memory);
+        this.cycleState = new CycleState(); // Khởi tạo trạng thái chu trình
     }
 
     /**
@@ -103,33 +107,128 @@ public class Simulator {
         
         try {
             // 1. FETCH
-            int machineCode = memory.loadWord(currentPC);
+            // int machineCode = memory.loadWord(currentPC);
+            fetch();
 
             // Xử lý HALT một cách đặc biệt
             // Trong một hệ thống thực, đây có thể là một lệnh supervisor call (SVC).
-            if (machineCode == 0x0000000) { // Dừng
-                isRunning = false;
-                return;
-            }
+            // if (machineCode == 0x0000000) { // Dừng
+            //     isRunning = false;
+            //     return;
+            // }
 
             // 2. DECODE
-            Instruction instruction = decoder.decode(machineCode);
-
+            // Instruction instruction = decoder.decode(machineCode);
+            decode();
+            
             // In thông tin để debug
-            System.out.printf("PC: 0x%04X | MC: 0x%08X | Decoded: %s\n", currentPC, machineCode, instruction.toString());
+            // System.out.printf("PC: 0x%04X | MC: 0x%08X | Decoded: %s\n", currentPC, machineCode, instruction.toString());
 
             // 3. EXECUTE
-            executor.execute(instruction);
+            // executor.execute(instruction, currentPC);
+            execute();
 
             instructionCount++;
             // Cập nhật PC sau khi thực thi lệnh
-            cpu.getPC().increment(4); // Giả sử mỗi lệnh là 4 byte
 
         } catch (Exception e) {
             System.err.println("FATAL ERROR at PC=0x" + Long.toHexString(currentPC) + ": " + e.getMessage());
             // In stack trace để dễ debug hơn
             e.printStackTrace();
             isRunning = false;
+        }
+    }
+
+    /**
+     * Thực hiện bước FETCH để lấy mã máy từ bộ nhớ.
+     */
+    public void fetch() {
+        long currentPC = cpu.getPC().getValue();
+        cycleState.setPcAtFetch(currentPC);
+        
+        if (currentPC < 0 || currentPC >= memory.getSize()) {
+            throw new RuntimeException("Program Counter out of memory bounds.");
+        }
+        
+        int machineCode = memory.loadWord(currentPC);
+        cycleState.setFetchedMachineCode(machineCode);
+        
+        System.out.printf("FETCHED from PC 0x%04X: 0x%08X\n", currentPC, machineCode);
+    }
+
+    /**
+     * Giai đoạn DECODE:
+     * - Lấy mã máy từ CycleState.
+     * - Xử lý các trường hợp đặc biệt như HALT.
+     * - Gọi Decoder để giải mã thành đối tượng Instruction.
+     * - Lưu đối tượng Instruction vào CycleState.
+     */
+    public void decode() {
+        int machineCode = cycleState.getFetchedMachineCode();
+
+        // Xử lý HALT
+        if (machineCode == 0x0000000) {
+            System.out.println("DECODED: HALT instruction. Halting simulation.");
+            this.isRunning = false;
+            // Tạo một lệnh "ảo" để Executor không làm gì cả
+            cycleState.setDecodedInstruction(new HaltInstruction());
+            return;
+        }
+
+        Instruction instruction = decoder.decode(machineCode);
+        cycleState.setDecodedInstruction(instruction);
+        
+        System.out.println("DECODED: " + instruction);
+    }
+
+    /**
+     * Giai đoạn EXECUTE:
+     * - Lấy đối tượng Instruction và PC từ CycleState.
+     * - Gọi Executor để thực thi lệnh.
+     * - Executor sẽ tự cập nhật PC, thanh ghi và cờ.
+     */
+    public void execute() {
+        Instruction instruction = cycleState.getDecodedInstruction();
+        long pcBeforeExecute = cycleState.getPcAtFetch();
+
+        // Nếu là lệnh HALT hoặc không có lệnh (do lỗi decode), không làm gì cả
+        if (instruction == null || !this.isRunning) {
+            return;
+        }
+
+        executor.execute(instruction, pcBeforeExecute);
+        
+        System.out.println("EXECUTED: " + instruction.getOpcodeMnemonic());
+    }
+
+    // Lớp nội bộ nhỏ để đại diện cho lệnh HALT, giúp Executor xử lý dễ hơn.
+    private static class HaltInstruction implements Instruction {
+        private final int machineCode;
+        private final String mnemonic;
+
+        public HaltInstruction() {
+            this.machineCode = 0xD4400000;
+            this.mnemonic = "HALT";
+        }
+
+        @Override
+        public int getMachineCode() {
+            return machineCode;
+        }
+
+        @Override
+        public String getOpcodeMnemonic() {
+            return mnemonic;
+        }
+
+        @Override
+        public InstructionFormat getFormat() {
+            return InstructionFormat.UNKNOWN;
+        }
+
+        @Override
+        public String toString() {
+            return mnemonic;
         }
     }
 

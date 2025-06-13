@@ -37,6 +37,12 @@ public class CPU {
         // --- Các phương thức cập nhật cờ ---
         // Sẽ được gọi bởi InstructionExecutor
 
+        // -- Setters for flags ---
+        public void setN(boolean n) { this.N = n; }
+        public void setZ(boolean z) { this.Z = z; }
+        public void setC(boolean c) { this.C = c; }
+        public void setV(boolean v) { this.V = v; }
+
         public void updateNZ(long result) {
             this.N = (result < 0);
             this.Z = (result == 0);
@@ -56,6 +62,17 @@ public class CPU {
             // Overflow for subtraction (signed overflow)
             this.V = ((operand1 > 0 && operand2 < 0 && result < 0) ||
                       (operand1 < 0 && operand2 > 0 && result >= 0));
+        }
+
+        /**
+         * Cập nhật tất cả các cờ từ một đối tượng ALUResult.
+         * @param aluResult Kết quả trả về từ ALU.
+         */
+        public void updateFlags(ALUResult aluResult) {
+            this.N = aluResult.isFlagN();
+            this.Z = aluResult.isFlagZ();
+            this.C = aluResult.isFlagC();
+            this.V = aluResult.isFlagV();
         }
         
         @Override
