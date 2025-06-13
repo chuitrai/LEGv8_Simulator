@@ -41,6 +41,7 @@ public class Simulator {
     public void loadProgram(long startAddress, int[] machineCode) {
         for (int i = 0; i < machineCode.length; i++) {
             // Mỗi lệnh cách nhau 4 byte
+            System.out.println("Loading instruction " + i + ": 0x" + Integer.toHexString(machineCode[i]) + " at address 0x" + Long.toHexString(startAddress + (long) i * 4));
             memory.storeWord(startAddress + (long) i * 4, machineCode[i]);
         }
         // Đặt PC của CPU tới địa chỉ bắt đầu của chương trình
@@ -59,6 +60,9 @@ public class Simulator {
         instructionCount = 0;
 
         while (isRunning && instructionCount < maxInstructions) {
+            System.out.println("\n--- Step " + (instructionCount + 1) + " ---");
+            System.out.println("Current PC: 0x" + Long.toHexString(cpu.getPC().getValue()));
+
             long currentPC = cpu.getPC().getValue();
 
             // Kiểm tra PC có hợp lệ không
@@ -103,7 +107,7 @@ public class Simulator {
 
             // Xử lý HALT một cách đặc biệt
             // Trong một hệ thống thực, đây có thể là một lệnh supervisor call (SVC).
-            if (machineCode == 0xD4400000) { // Mã HALT chuẩn hơn
+            if (machineCode == 0x0000000) { // Dừng
                 isRunning = false;
                 return;
             }
@@ -118,6 +122,8 @@ public class Simulator {
             executor.execute(instruction);
 
             instructionCount++;
+            // Cập nhật PC sau khi thực thi lệnh
+            cpu.getPC().increment(4); // Giả sử mỗi lệnh là 4 byte
 
         } catch (Exception e) {
             System.err.println("FATAL ERROR at PC=0x" + Long.toHexString(currentPC) + ": " + e.getMessage());

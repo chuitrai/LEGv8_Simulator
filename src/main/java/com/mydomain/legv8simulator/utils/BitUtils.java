@@ -245,7 +245,16 @@ public final class BitUtils {
      * @return Chuỗi nhị phân 32-bit.
      */
     public static String toBinaryString32(int value) {
-        return String.format("%32s", Integer.toBinaryString(value)).replace(' ', '0');
+        // Ghi thanh nhóm 8 bit, mỗi nhóm cách nhau một dấu cách
+        String binaryString = String.format("%32s", Integer.toBinaryString(value)).replace(' ', '0');
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < binaryString.length(); i++) {
+            formatted.append(binaryString.charAt(i));
+            if ((i + 1) % 8 == 0 && i < binaryString.length() - 1) {
+                formatted.append(' '); // Thêm dấu cách sau mỗi 8 bit
+            }
+        }
+        return formatted.toString();
     }
 
     /**
@@ -255,6 +264,31 @@ public final class BitUtils {
      */
     public static String toBinaryString64(long value) {
         return String.format("%64s", Long.toBinaryString(value)).replace(' ', '0');
+    }
+
+    /**
+     * In ra một đoạn bit của 1 giá trị interger
+     * @param startBit
+     * @param endBit
+     * @return Chuỗi nhị phân của đoạn bit từ startBit đến endBit
+     */
+    public static String toBinaryString(int value, int startBit, int endBit) {
+        if (startBit < 0 || endBit > 31 || startBit > endBit) {
+            throw new IllegalArgumentException(String.format("Invalid bit range: start=%d, end=%d. Must be 0 <= start <= end <= 31.", startBit, endBit));
+        }
+        int numBits = endBit - startBit + 1;
+        int mask = (numBits == 32) ? -1 : ((1 << numBits) - 1);
+        int extractedValue = (value >>> startBit) & mask;
+        // Chỉ in ra số bit trong khoảng từ startBit đến endBit
+        String binaryString = String.format("%" + numBits + "s", Integer.toBinaryString(extractedValue)).replace(' ', '0');
+        StringBuilder formatted = new StringBuilder();
+        for (int i = 0; i < binaryString.length(); i++) {
+            formatted.append(binaryString.charAt(i));
+            if ((i + 1) % 8 == 0 && i < binaryString.length() - 1) {
+                formatted.append(' '); // Thêm dấu cách sau mỗi 8 bit
+            }
+        }
+        return formatted.toString();
     }
 
     /**

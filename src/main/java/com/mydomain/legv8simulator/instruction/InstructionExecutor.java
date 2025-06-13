@@ -27,7 +27,6 @@ public class InstructionExecutor {
      */
     public void execute(Instruction instruction) {
         long currentPC = cpu.getPC().getValue();
-        cpu.getPC().setValue(currentPC + 4); // Tăng PC lên 4 theo mặc định
 
         if (instruction instanceof RFormatInstruction) {
             executeRFormat((RFormatInstruction) instruction);

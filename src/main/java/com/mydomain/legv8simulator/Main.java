@@ -33,62 +33,70 @@ public class Main {
             0xD1201421, // SUBIS X1, X1, #5 (Giả sử X1=5, X1=0 và cờ Z được đặt)
             0x9B010022, // MUL X2, X1, X1 (Giả sử X1=5, X2=25 sau lệnh này)
 
-            // // II. Lệnh Logical
-            // 0x8A010022, // AND X2, X1, X1 (Giả sử X1=0b1010, X2=0b1010 sau lệnh này)
-            // 0x8A210022, // ANDS X2, X1, X1 (Giả sử X1=0b0000, X2=0b0000 và cờ Z được đặt)
-            // 0x92001421, // ANDI X1, X1, #5 (Giả sử X1=0b1111, X1=0b0101 sau lệnh này)
-            // 0xBA010022, // ORR X2, X1, X1 (Giả sử X1=0b1010, X2=0b1010 sau lệnh này)
-            // 0xF2001421, // ORRI X1, X1, #5 (Giả sử X1=0b0011, X1=0b0111 sau lệnh này)
-            // 0xCA010022, // EOR X2, X1, X1 (Giả sử X1=0b1010, X2=0b0000 sau lệnh này)
-            // 0xD2001421, // EORI X1, X1, #5 (Giả sử X1=0b1100, X1=0b1001 sau lệnh này)
-            // 0xD3400000, // LSL X0, X0, #0 (Không có tác dụng, nhưng là một mẫu hợp lệ)
-            // 0xD3410000, // LSL X0, X0, #1 (Giả sử X0=1, X0=2 sau lệnh này)
-            // 0xD3600000, // LSR X0, X0, #0 (Không có tác dụng)
-            // 0xD3610000, // LSR X0, X0, #1 (Giả sử X0=2, X0=1 sau lệnh này)
-            // 0xD3800000, // ASR X0, X0, #0 (Không có tác dụng)
-            // 0xD3810000, // ASR X0, X0, #1 (Giả sử X0=-2 (0xFFFFFFFFFFFFFFFE), X0=-1 (0xFFFFFFFFFFFFFFFF) sau lệnh này)
+            // II. Lệnh Logical
+            0x8A010022, // AND X2, X1, X1 (Giả sử X1=0b1010, X2=0b1010 sau lệnh này)
+            0x8A210022, // ANDS X2, X1, X1 (Giả sử X1=0b0000, X2=0b0000 và cờ Z được đặt)
+            0x92001421, // ANDI X1, X1, #5 (Giả sử X1=0b1111, X1=0b0101 sau lệnh này)
+            0xAA010022, // ORR X2, X1, X1 (Giả sử X1=0b1010, X2=0b1010 sau lệnh này)
+            0xF2001421, // ORRI X1, X1, #5 (Giả sử X1=0b0011, X1=0b0111 sau lệnh này)
+            0xCA010022, // EOR X2, X1, X1 (Giả sử X1=0b1010, X2=0b0000 sau lệnh này)
+            0xD2001421, // EORI X1, X1, #5 (Giả sử X1=0b1100, X1=0b1001 sau lệnh này)
+            0xD3400000, // LSR X0, X0, #0 (Không có tác dụng, nhưng là một mẫu hợp lệ)
+            0xD3400400, // LSR X0, X0, #1 (Giả sử X0=1, X0=2 sau lệnh này)
+            0xD3600000, // LSL X0, X0, #0 (Không có tác dụng)
+            0xD3600400, // LSL X0, X0, #1 (Giả sử X0=2, X0=1 sau lệnh này)
+            0xD3800000, // ASR X0, X0, #0 (Không có tác dụng)
+            0xD3800400, // ASR X0, X0, #1 (Giả sử X0=-2 (0xFFFFFFFFFFFFFFFE), X0=-1 (0xFFFFFFFFFFFFFFFF) sau lệnh này)
 
-            // // III. Lệnh truyền dữ liệu
-            // 0xF8407C03, // LDUR X3, [X0, #0] (Tải giá trị từ địa chỉ X0+0 vào X3)
-            // 0xF8007C03, // STUR X3, [X0, #0] (Lưu giá trị của X3 vào địa chỉ X0+0)
-            // 0xF8407C04, // LDURSW X4, [X0, #0] (Tải 32-bit từ X0+0, mở rộng dấu vào X4)
-            // 0xF8007C04, // STURW X4, [X0, #0] (Lưu 32-bit thấp của X4 vào X0+0)
-            // 0xF8407C05, // LDURH X5, [X0, #0] (Tải 16-bit từ X0+0, mở rộng 0 vào X5)
-            // 0xF8007C05, // STURH X5, [X0, #0] (Lưu 16-bit thấp của X5 vào X0+0)
-            // 0xF8407C06, // LDURB X6, [X0, #0] (Tải 8-bit từ X0+0, mở rộng 0 vào X6)
-            // 0xF8007C06, // STURB X6, [X0, #0] (Lưu 8-bit thấp của X6 vào X0+0)
+            // III. Lệnh truyền dữ liệu
+            0xF8400003, // LDUR X3, [X0, #0]      (Tải 64-bit từ địa chỉ X0+0 vào X3)
+            0xF8000003, // STUR X3, [X0, #0]      (Lưu 64-bit từ X3 vào địa chỉ X0+0)
+            0xB8800004, // LDURSW X4, [X0, #0]    (Tải 32-bit có dấu từ X0+0 vào X4)
+            0xB8000004, // STURW X4, [X0, #0]     (Lưu 32-bit thấp của X4 vào X0+0)
+            0x78400005, // LDURH W5, [X0, #0]     (Tải 16-bit từ X0+0 vào W5, zero-extend)
+            0x78000005, // STURH W5, [X0, #0]     (Lưu 16-bit từ W5 vào X0+0)
+            0x38400006, // LDURB W6, [X0, #0]     (Tải 8-bit từ X0+0 vào W6, zero-extend)
+            0x38000006, // STURB W6, [X0, #0]     (Lưu 8-bit từ W6 vào X0+0)
+            // 0x885F7C02, // LDXR X2, [X0]
+            // 0xC8007C01, // STXR W1, W3, [X0]
 
-            // // IV. Lệnh rẽ nhánh có điều kiện
-            // 0xB4000000, // CBZ X0, label (Lệnh này sẽ rẽ nhánh nếu X0 = 0, offset = 0x0)
-            // 0xB5000000, // CBNZ X0, label (Lệnh này sẽ rẽ nhánh nếu X0 != 0, offset = 0x0)
-            // 0x54000000, // B.EQ label (Lệnh này sẽ rẽ nhánh nếu cờ Z=1, offset = 0x0)
-            // 0x54000040, // B.NE label (Lệnh này sẽ rẽ nhánh nếu cờ Z=0, offset = 0x0)
-            // // ... và các điều kiện khác cho B.cond ...
 
-            // // V. Lệnh rẽ nhánh không điều kiện
-            // 0x14000000, // B label (Offset 0x0, rẽ nhánh đến địa chỉ hiện tại + 0)
-            // 0x94000000, // BL label (Offset 0x0, lưu PC+4 vào LR và rẽ nhánh)
-            // 0xD61F0000, // BR XZR (Không có tác dụng, nhưng là một mẫu hợp lệ; thường dùng BR LR)
+            // IV. Lệnh rẽ nhánh có điều kiện
+            0xB4000000, // CBZ X0, #0     (Nhảy nếu X0 == 0, offset = 0)
+            0xB5000000, // CBNZ X0, #0    (Nhảy nếu X0 != 0, offset = 0)
+            0x54000000, // B.EQ  (Z == 1)
+            0x54000001, // B.NE  (Z == 0)
+            0x54000002, // B.HS  (C == 1) aka B.CS
+            0x54000003, // B.LO  (C == 0) aka B.CC
+            0x54000004, // B.MI  (N == 1)
+            0x54000005, // B.PL  (N == 0)
+            0x54000006, // B.VS  (V == 1)
+            0x54000007, // B.VC  (V == 0)
+            0x54000008, // B.HI  (C == 1 && Z == 0)
+            0x54000009, // B.LS  (C == 0 || Z == 1)
+            0x5400000A, // B.GE  (N == V)
+            0x5400000B, // B.LT  (N != V)
+            0x5400000C, // B.GT  (Z == 0 && N == V)
+            0x5400000D, // B.LE  (Z == 1 || N != V)
 
-            // // VI. Lệnh Move Wide
-            // 0xD2800000, // MOVZ X0, #0, LSL #0 (X0 = 0)
-            // 0xD2800020, // MOVZ X0, #1, LSL #0 (X0 = 1)
-            // 0xD2800021, // MOVZ X1, #1, LSL #16 (X1 = 0x00010000)
-            // 0xF2800020, // MOVK X0, #1, LSL #0 (Giả sử X0 đã có giá trị, chỉ thay đổi 16 bit thấp nhất thành 1)
-            // 0xF2800021, // MOVK X1, #1, LSL #16 (Giả sử X1 đã có giá trị, chỉ thay đổi 16 bit từ bit 16 đến 31 thành 1)
+            // Có thể thêm các điều kiện khác như B.GT (Z=0 & N=V), B.LT (N!=V), ...
 
-            // // VII. Lệnh hệ thống và giả lệnh
-            // 0xAC000000, // NOP (ví dụ opcode của NOP)
-            // 0xAA000020, // MOV X0, X1 (chuyển X1 vào X0)
-            // 0xEB00001F, // CMP XZR, X0 (so sánh X0 với 0, đặt cờ)
-            // 0xF100001F, // CMPI XZR, #0 (so sánh 0 với 0, đặt cờ)
-            // 0xCB0003E0, // NEG X0, X0 (X0 = -X0)
-            // 0xFFFFFFFF, // HALT (đây là một giá trị giả định cho HALT, thực tế tùy thuộc vào simulator của bạn)
+            // V. Lệnh rẽ nhánh không điều kiện
+            0x14000000, // B #0           (Nhảy vô điều kiện, offset = 0)
+            0x94000000, // BL #0          (Nhảy vô điều kiện, lưu PC+4 vào X30 (LR))
+            0xD64003C0, // BR X30         (Quay về địa chỉ trong X30 — thường dùng sau BL)
+
+            // VI. Lệnh Move Wide (Zero và Keep)
+            0xD2800000, // MOVZ X0, #0, LSL #0         (X0 = 0)
+            0xD2800021, // MOVZ X1, #1, LSL #0         (X1 = 1)
+            0xD2A00021, // MOVZ X1, #1, LSL #16        (X1 = 0x00010000)
+            0xF2800000, // MOVK X0, #0, LSL #0         (ghi đè 16 bit thấp với 0)
+            0xF2A00021, // MOVK X1, #1, LSL #16        (ghi đè bit 16–31 bằng 1)
 
             0x00000000 // Một lệnh dừng hoặc NOP ở cuối
         };
         
         simulator.loadProgram(0x00, program);
-        simulator.run(8); // Chạy tối đa 50 lệnh
+        simulator.run(100); // Chạy tối đa 50 lệnh
     }
 }

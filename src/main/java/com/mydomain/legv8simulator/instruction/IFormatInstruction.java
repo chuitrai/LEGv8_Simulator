@@ -36,7 +36,7 @@ public class IFormatInstruction implements Instruction {
         return opcode;
     }
 
-    public int getImmediate() {
+    public long getImmediate() {
         return immediate;
     }
 
