@@ -6,6 +6,7 @@ import main.java.com.mydomain.legv8simulator.instruction.Instruction;
 import main.java.com.mydomain.legv8simulator.instruction.InstructionDecoder;
 import main.java.com.mydomain.legv8simulator.instruction.InstructionExecutor;
 import main.java.com.mydomain.legv8simulator.instruction.InstructionFormat;
+import main.java.com.mydomain.legv8simulator.utils.BitUtils;
 import main.java.com.mydomain.legv8simulator.gui.CycleState;
 
 /**
@@ -106,27 +107,20 @@ public class Simulator {
         long currentPC = cpu.getPC().getValue();
         
         try {
-            // 1. FETCH
-            // int machineCode = memory.loadWord(currentPC);
+            // 1. FETCH --> Lấy mã máy từ bộ nhớ
             fetch();
-
-            // Xử lý HALT một cách đặc biệt
-            // Trong một hệ thống thực, đây có thể là một lệnh supervisor call (SVC).
-            // if (machineCode == 0x0000000) { // Dừng
-            //     isRunning = false;
-            //     return;
-            // }
-
-            // 2. DECODE
-            // Instruction instruction = decoder.decode(machineCode);
-            decode();
             
-            // In thông tin để debug
-            // System.out.printf("PC: 0x%04X | MC: 0x%08X | Decoded: %s\n", currentPC, machineCode, instruction.toString());
+            // Cập nhật GUI
 
-            // 3. EXECUTE
-            // executor.execute(instruction, currentPC);
+            // 2. DECODE --> Giải mã mã máy thành đối tượng Instruction
+            decode();
+
+            // Cập nhật GUI
+
+            // 3. EXECUTE --> Thực thi lệnh đã giải mã
             execute();
+
+            // Cập nhật GUI
 
             instructionCount++;
             // Cập nhật PC sau khi thực thi lệnh
@@ -174,7 +168,7 @@ public class Simulator {
             cycleState.setDecodedInstruction(new HaltInstruction());
             return;
         }
-
+        System.out.println("Decoding machine code: " + BitUtils.toBinaryString32(machineCode));
         Instruction instruction = decoder.decode(machineCode);
         cycleState.setDecodedInstruction(instruction);
         

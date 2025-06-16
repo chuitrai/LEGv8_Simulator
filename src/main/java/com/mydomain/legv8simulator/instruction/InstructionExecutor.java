@@ -30,6 +30,7 @@ public class InstructionExecutor {
     public void execute(Instruction instruction, long currentPC) {
         // PC sẽ được cập nhật trong các hàm con.
         // Mặc định, nó sẽ là currentPC + 4 nếu không phải lệnh rẽ nhánh.
+        System.out.println("Executing instruction at PC 0x" + Long.toHexString(currentPC) + ": " + instruction.getOpcodeMnemonic());
 
         if (instruction instanceof RFormatInstruction) {
             executeRFormat((RFormatInstruction) instruction, currentPC);
