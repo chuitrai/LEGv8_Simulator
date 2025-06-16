@@ -81,14 +81,14 @@ public class LEGv8Datapath extends Pane {
         drawCompRect(gc, C5_DATAMEM, R_MAIN_PATH + 0.4*aluHeight, rectWidth*0.9, rectHeight*0.9); // Data Memory
 
         // --- Khối logic trên cùng ---
-        drawALU(gc, C1_PC_IM + width*0.13, R_BRANCH_LOGIC - pcHeight, pcWidth*1.2, pcHeight, false); // Add 4
-        drawCompEllipse(gc, C3_REGISTERS + 0.15*width, R_BRANCH_LOGIC , ellipseWidth, ellipseHeight, Color.BLACK, false); // Shift left 2
+        drawALU(gc, C1_PC_IM + width*0.13, R_BRANCH_LOGIC - pcHeight, pcWidth, pcHeight*0.8, false); // Add 4
+        drawCompEllipse(gc, C3_REGISTERS + 0.15*width, R_BRANCH_LOGIC*1.1 , ellipseWidth, ellipseHeight, Color.BLACK, false); // Shift left 2
         drawALU(gc, C3_REGISTERS + width*0.25, R_BRANCH_LOGIC - pcHeight*0.4, pcWidth*1.5, pcHeight*1.2, false); // Add Branch
 
         // --- Khối điều khiển và mở rộng ---
         drawCompEllipse(gc, C2_CONTROL, R_CONTROL - 0.1*height, ellipseWidth*1.2, ellipseHeight*4, CONTROL_BLUE, false); // Control
         drawCompEllipse(gc, C3_REGISTERS + width*0.02, R_SIGN_EXTEND, ellipseWidth, ellipseHeight, Color.BLACK, false); // Sign-extend
-        drawCompEllipse(gc, C4_ALU - width*0.02, R_SIGN_EXTEND, ellipseWidth, ellipseHeight, Color.BLUEVIOLET, false); // ALU Control
+        drawCompEllipse(gc, C4_ALU - width*0.025, R_SIGN_EXTEND *1.02, ellipseWidth, ellipseHeight, Color.BLUEVIOLET, false); // ALU Control
 
         double flagSize = width * 0.018;
         double flagY = R_MAIN_PATH - aluHeight*0.05 - flagSize - height*0.01; // Thêm khoảng cách nhỏ
@@ -99,7 +99,7 @@ public class LEGv8Datapath extends Pane {
         // ===================================
         // 2. VẼ CÁC BỘ MUX
         // ===================================
-        drawMux(gc, C2_CONTROL - 0.02*width, R_MAIN_PATH + 0.05*height, 0.02*width, 0.09*height, false,false); // MUX Register Input
+        drawMux(gc, C2_CONTROL - 0.02*width, R_MAIN_PATH + 0.03*height, 0.02*width, 0.09*height, false,false); // MUX Register Input
         drawMux(gc, C4_ALU - 50, R_MAIN_PATH + 0.11*height,  0.02*width, 0.09*height, false,false); // MUX ALU Input
         drawMux(gc, C6_MUX - 0.02*width, R_BRANCH_LOGIC - 0.065*height,  0.02*width, 0.09*height, false,false); // MUX PC Source
         drawMux(gc, C6_MUX, R_MAIN_PATH + 0.6*aluHeight,  0.02*width, 0.09*height, false,false); // MUX MemToReg
@@ -121,7 +121,7 @@ public class LEGv8Datapath extends Pane {
 
         // Vị trí X, Y của cổng OR, nằm trước MUX chọn PC
         double orGateX = logicGatesX + width*0.18 + gateW;
-        double orGateY = R_BRANCH_LOGIC + height * 0.05;
+        double orGateY = R_BRANCH_LOGIC + height * 0.1;
 
         // --- Vẽ các cổng ---
         drawAndGateHorizontal(gc, logicGatesX + width*0.1, andGateY, gateW, gateH, CONTROL_BLUE);
@@ -132,38 +132,41 @@ public class LEGv8Datapath extends Pane {
         // // 4. VẼ CÁC ĐƯỜNG DÂY DỮ LIỆU (DATA PATH - BLACK)
         // // ===================================
         // // PC -> Add
-        drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC*0.6, R_MAIN_PATH, CONTROL_BLUE, false, true); // PC to Add 4
-        drawRightArrow(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC*0.6, C1_PC_IM + width*0.13, CONTROL_BLUE, true); // PC to Add 4
-        drawRightArrow(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + width*0.09, CONTROL_BLUE, true); // PC to Instruction Memory
-        drawRightArrow(gc, C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.9, C1_PC_IM + width*0.13, CONTROL_BLUE, false); // PC to Add 4
-        drawRightArrow(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, C1_PC_IM, CONTROL_BLUE, false); // To PC
-        drawVerticalSegment(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, R_BRANCH_LOGIC*0.3,  CONTROL_BLUE, false, false); 
-        drawHorizontalSegment(gc, C1_PC_IM - pcWidth*0.5, R_BRANCH_LOGIC*0.3, C6_MUX + 0.04*width, CONTROL_BLUE, false, false);
-        drawVerticalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.3, R_BRANCH_LOGIC*0.9, CONTROL_BLUE, false, false); // MUX to PC
-        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth*1.2, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, CONTROL_BLUE, false); // To PC
-        drawHorizontalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.9, C6_MUX, CONTROL_BLUE, false, false); // MUX to PC
-        drawRightArrow(gc, C3_REGISTERS + width*0.25 + pcWidth*1.5, R_BRANCH_LOGIC*1.1, C6_MUX - 0.02*width, CONTROL_BLUE, false); // Add 4 to MUX
-        // // PC -> Instruction Memory
-        // drawRightArrow(gc, C1_PC_IM + 60, R_MAIN_PATH, C1_PC_IM + 100, DATA_PATH_COLOR, true);
-        // // PC+4 -> MUX
-        // drawRightArrow(gc, C1_PC_IM + 180, R1_BRANCH_LOGIC, C5_DATAMEM - 50, DATA_PATH_COLOR, true);
+        drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC*0.6, R_MAIN_PATH, BLACK, false, true); // PC to Add 4
+        drawRightArrow(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC*0.6, C1_PC_IM + width*0.13, BLACK, false); // PC to Add 4
+        drawRightArrow(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + width*0.09, BLACK, false); // PC to Instruction Memory
+        drawRightArrow(gc, C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.85, C1_PC_IM + width*0.13, BLACK, false); // PC to Add 4
+        drawRightArrow(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, C1_PC_IM, BLACK, false); // To PC
+        drawVerticalSegment(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, R_BRANCH_LOGIC*0.3,  BLACK, false, false); 
+        drawHorizontalSegment(gc, C1_PC_IM - pcWidth*0.5, R_BRANCH_LOGIC*0.3, C6_MUX + 0.04*width, BLACK, false, false);
+        drawVerticalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.3, R_BRANCH_LOGIC*0.9, BLACK, false, false); // MUX to PC
+        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, BLACK, false); // Add 4 to MUX
+        drawHorizontalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.9, C6_MUX, BLACK, false, false); // MUX to PC
+        drawRightArrow(gc, C3_REGISTERS + width*0.25 + pcWidth*1.5, R_BRANCH_LOGIC*1.1, C6_MUX - 0.02*width, BLACK, false); // Add Branch to MUX
         
-        // // Instruction Memory Outputs
-        // double imOutX = C1_PC_IM + 200;
-        // // IM -> Registers
-        // drawRightArrow(gc, imOutX, R3_MAIN_PATH - 70, C3_REGISTERS, DATA_PATH_COLOR, true);
-        // drawRightArrow(gc, imOutX, R3_MAIN_PATH - 20, C3_REGISTERS, DATA_PATH_COLOR, true);
-        // drawRightArrow(gc, imOutX, R3_MAIN_PATH + 20, C3_REGISTERS - 50, DATA_PATH_COLOR, true);
-        // // IM -> Control
-        // drawVerticalSegment(gc, imOutX + 40, R2_CONTROL + 100, R3_MAIN_PATH, DATA_PATH_COLOR, true, true);
-        // drawRightArrow(gc, imOutX + 40, R2_CONTROL + 100, C2_CONTROL + 100, DATA_PATH_COLOR, false);
-        // // IM -> Sign Extend
-        // drawVerticalSegment(gc, imOutX + 80, R3_MAIN_PATH, R4_SIGN_EXTEND + 25, DATA_PATH_COLOR, true, true);
-        // drawRightArrow(gc, imOutX + 80, R4_SIGN_EXTEND + 25, C3_REGISTERS + 20, DATA_PATH_COLOR, false);
-        // // IM -> Shift Left
-        // drawVerticalSegment(gc, imOutX + 110, R1_BRANCH_LOGIC + 15, R3_MAIN_PATH, DATA_PATH_COLOR, true, true);
-        // drawRightArrow(gc, imOutX + 110, R1_BRANCH_LOGIC + 15, C3_REGISTERS, DATA_PATH_COLOR, false);
+        // Shift Left 2 -> Add Branch
+        drawRightArrow(gc, C3_REGISTERS + width*0.15 + ellipseWidth, R_BRANCH_LOGIC*1.3, C3_REGISTERS + width*0.25, BLACK, false); // Shift Left 2 to Add Branch
+        // PC -> Add Shift
+        drawRightArrow(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC, C3_REGISTERS + width*0.25, BLACK, true); // PC to Shift Left 2
+
+        // Instruction Memory -> Control
+        drawHorizontalSegment(gc, C1_PC_IM + width*0.09 + rectWidth, R_MAIN_PATH + 0.07 * height, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, BLACK, false,true); 
+        drawVerticalSegment(gc, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, R_SIGN_EXTEND + 0.5*ellipseHeight, R_MAIN_PATH - 0.15 * height, BLACK, false, false); 
+        drawRightArrow(gc, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, R_MAIN_PATH - 0.15 * height, C2_CONTROL, BLACK, true); // Instruction Memory to Control
+
+        // Instruction Memory -> Sign Extend
+        drawRightArrow(gc, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, R_SIGN_EXTEND + 0.5*ellipseHeight, C3_REGISTERS + width*0.02, BLACK, false); // Instruction Memory to Sign Extend
+
+        // Instruction Memory -> Registers
+        drawRightArrow(gc, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, R_MAIN_PATH + 0.04 * height, C2_CONTROL - 0.02*width, BLACK, true); // Instruction Memory to MUX Register Input
+        drawRightArrow(gc, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, R_MAIN_PATH + 0.01 * height, C3_REGISTERS, BLACK, true); // Instruction Memory to Registers
+        drawRightArrow(gc, C1_PC_IM + width*0.09 + rectWidth + 0.5*pcWidth, R_MAIN_PATH + 0.15 * height, C3_REGISTERS, BLACK, true); // Instruction Memory to Sign Extend
+        drawRightArrow(gc, C2_CONTROL, R_MAIN_PATH + 0.075 * height, C3_REGISTERS, BLACK, false); // MUX Register Input to Registers
+        drawRightArrow(gc, C2_CONTROL - 0.05*width, R_MAIN_PATH + 0.085 * height, C2_CONTROL - 0.02*width, BLACK, false); // Instruction Memory to MUX Register Input
+        drawVerticalSegment(gc, C2_CONTROL - 0.05*width, R_MAIN_PATH + 0.15 * height, R_MAIN_PATH + 0.085 * height, BLACK, true, false); // MUX Register Input to Sign Extend
         
+        // Control to Line Bus
+
         // // Register Outputs -> ALU
         // drawRightArrow(gc, C3_REGISTERS + 120, R3_MAIN_PATH - 70, C4_ALU, DATA_PATH_COLOR, true);
         // drawRightArrow(gc, C3_REGISTERS + 120, R3_MAIN_PATH + 30, C4_ALU - 50, DATA_PATH_COLOR, true);
