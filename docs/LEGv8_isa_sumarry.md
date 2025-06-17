@@ -123,4 +123,11 @@ Used for loading large immediate values into a register.
 | :------- | :----- | :------------------------ | :-------------------------------------------- | :------------------------------------------------------------------------- |
 | **MOVZ** | IM     | `Rd, #imm16, LSL #shift`  | `Rd = (imm16 << shift)` (zeros other bits)  | Move Wide with Zero. `shift` can be 0, 16, 32, 48. `imm16` is a 16-bit immediate. |
 | **MOVK** | IM     | `Rd, #imm16, LSL #shift`  | `Rd[N+15:N] = imm16` (keeps other bits)   | Move Wide with Keep. `shift` can be 0, 16, 32, 48. `imm16` is a 16-bit immediate. N is the shift amount. |
+
+## VII. System and Pseudo-Instructions
+
+| Mnemonic | Type   | Operands             | Equivalent / Operation                 | Description                                        |
+| :------- | :----- | :------------------- | :------------------------------------- | :------------------------------------------------- |
+| **HALT** | System |                      | (Special simulator instruction)        | Stops the simulation. (Not a standard LEGv8 instruction, but useful for simulators) |
+
 ```

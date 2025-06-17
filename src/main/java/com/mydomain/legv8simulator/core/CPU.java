@@ -23,7 +23,7 @@ public class CPU {
 
         public void reset() {
             N = false;
-            Z = true; // Theo quy ước, Z=1 khi reset
+            Z = false; 
             C = false;
             V = false;
         }

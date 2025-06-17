@@ -92,6 +92,13 @@ public class Assembler {
         int currentAddress = 0;
 
         for (int i = 0; i < lines.size(); i++) {
+            // Xử lí lệnh HALT
+            if (lines.get(i).trim().equalsIgnoreCase("HALT")) {
+                System.out.println("HALT instruction found at line " + (i + 1));
+                machineCodeList.add(0x00000000); // Mã máy cho HALT
+                continue; // Bỏ qua dòng này, không cần xử lý thêm
+            }
+
             ParseResult result = parser.parse(lines.get(i), i + 1);
             if (result == null || result.getInstruction().isEmpty()) {
                 continue; // Chỉ xử lý các dòng có lệnh

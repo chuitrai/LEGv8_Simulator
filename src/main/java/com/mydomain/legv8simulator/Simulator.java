@@ -161,7 +161,7 @@ public class Simulator {
         int machineCode = cycleState.getFetchedMachineCode();
 
         // Xử lý HALT
-        if (machineCode == 0x0000000) {
+        if (machineCode == 0x00000000) {
             System.out.println("DECODED: HALT instruction. Halting simulation.");
             this.isRunning = false;
             // Tạo một lệnh "ảo" để Executor không làm gì cả
