@@ -21,10 +21,13 @@ LEGv8_Simulator/
 │   │   │   └── com/yourdomain/legv8simulator/  # Gói (package) gốc của bạn
 │   │   │       ├── Main.java                     # Điểm khởi chạy ứng dụng
 │   │   │       │
-│   │   │       ├── core/                         # Lõi của trình mô phlucyện
+│   │   │       ├── core/                         # Lõi của trình mô phỏng lucyện
 │   │   │       │   ├── CPU.java                  # Đại diện cho CPU, điều phối các thành phần
 │   │   │       │   ├── ALU.java                  # Đơn vị Số học và Logic
-│   │   │       │   ├── RegisterFile.java         # Quản lý các thanh ghi
+│   │   │       │   ├── ALUResult.java            # Định dạng kết quả của ALU, lấy giá trị + flag
+│   │   │       │   ├── RegisterFile.java         # Quản lý các thanh ghi như 1 mảng (32 thanh)
+│   │   │       │   ├── RegisterType.java         # Enum các kiểu thanh ghi
+│   │   │       │   ├── Register.java             # Đại diện 1 thanh ghi
 │   │   │       │   ├── Memory.java               # Quản lý bộ nhớ (Instruction & Data)
 │   │   │       │   ├── ControlUnit.java          # Tạo tín hiệu điều khiển
 │   │   │       │   ├── PC.java                   # Program Counter
@@ -32,22 +35,21 @@ LEGv8_Simulator/
 │   │   │       │   └── Datapath.java             # (Tùy chọn, nếu muốn tách riêng) Quản lý luồng dữ liệu
 │   │   │       │
 │   │   │       ├── instruction/                  # Liên quan đến xử lý lệnh
-│   │   │       │   ├── InstructionDecoder.java   # Giải mã lệnh từ mã máy
+│   │   │       │   ├── InstructionDecoder.java   # Decode hex -> lệnh
 │   │   │       │   ├── InstructionExecutor.java  # Thực thi các loại lệnh khác nhau
-│   │   │       │   ├── Opcode.java               # Enum hoặc class chứa thông tin opcode
-│   │   │       │   ├── InstructionFormat.java    # Enum cho các định dạng lệnh (R, I, D, B, CB, IM)
-│   │   │       │   └── LegV8Instructions.java    # (Tùy chọn) Interface hoặc abstract class cho các lệnh
+│   │   │       │   ├── InstructionFormat.java    # Enum cho các định dạng lệnh (R, I, D, B, CB, IM, UNKNOW)
+│   │   │       │   └── Instructions*Format.java  # Các class của các định dạng lệnh (R, I, D, B, CB, IM, UNKNOW)
 │   │   │       │
 │   │   │       ├── assembler/                    # Trình hợp dịch (Assembly -> Machine Code)
 │   │   │       │   ├── Assembler.java            # Lớp chính của trình hợp dịch
 │   │   │       │   ├── Parser.java               # Phân tích cú pháp từng dòng assembly
-│   │   │       │   ├── Lexer.java                # (Tùy chọn) Tách dòng assembly thành tokens
+│   │   │       │   ├── PaserInstruction.java     # Cấu trúc kết quả của Parser
 │   │   │       │   ├── SymbolTable.java          # Quản lý các nhãn (labels)
+│   │   │       │   ├── OpcodeTable.java          # Bảng hash của các lệnh
 │   │   │       │   └── AssemblyException.java    # Exception cho lỗi hợp dịch
 │   │   │       │
 │   │   │       ├── utils/                        # Các lớp tiện ích
-│   │   │       │   ├── BitUtils.java             # Các hàm xử lý bit (sign-extend, zero-extend, etc.)
-│   │   │       │   ├── FileUtils.java            # Các hàm đọc/ghi file
+│   │   │       │   ├── BitUtils.java             # Các hàm xử lý bit 
 │   │   │       │   └── Constants.java            # Các hằng số (kích thước bộ nhớ, số thanh ghi)
 │   │   │       │
 │   │   │       ├── gui/                          # (Để trống ban đầu, sẽ phát triển sau)
