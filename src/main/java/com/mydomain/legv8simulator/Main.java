@@ -22,7 +22,7 @@ public class Main {
         // 3. Nạp chương trình từ file assembly
         Assembler assembler = new Assembler();
 
-        List<String> assemblyLines = Files.readAllLines(Paths.get("resources/assembly_examples/example_1.s"));
+        List<String> assemblyLines = Files.readAllLines(Paths.get("resources/assembly_examples/example_2.s"));
 
         // Hợp dịch
         try {

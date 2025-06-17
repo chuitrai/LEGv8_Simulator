@@ -99,6 +99,8 @@ public class Assembler {
 
             ParsedInstruction pInstr = result.getInstruction().get();
             int encodedInstruction = encodeInstruction(pInstr, currentAddress);
+            // in ra thông tin mã máy đã được mã hóa
+            System.out.println("Encoded instruction: " + pInstr.getMnemonic() + " -> " + encodedInstruction + " at address 0x" + Integer.toHexString(currentAddress).toUpperCase());
             machineCodeList.add(encodedInstruction);
             currentAddress += 4;
         }
@@ -162,7 +164,7 @@ public class Assembler {
                     throw new AssemblyException("Offset out of range: " + offset);
                 }
                 System.out.println("Check D Format: rd=" + rd_d + ", rn=" + rn_d + ", offset=" + offset + ", opcode=" + BitUtils.toBinaryString32(opcode) + ", MNEMONIC=" + mnemonic);
-                return (opcode << 22) | ((offset & 0xFFF) << 10) | (rn_d << 5) | rd_d;
+                return (opcode << 21) | ((offset & 0xFFF) << 10) | (rn_d << 5) | rd_d;
             case B_FORMAT:
                 checkOperands(pInstr, 2);
                 int rn_b = parseRegister(operands[0]);
@@ -173,6 +175,8 @@ public class Assembler {
                 }
                 return (opcode << 21) | ((offset_b & 0x3FFFF) << 5) | rn_b;
             case CB_FORMAT:
+                // in ra thông tin pInstr để dễ debug
+                System.out.println("Check CB Format: " + pInstr.toString());
                 checkOperands(pInstr, 2);
                 int rn_cb = parseRegister(operands[0]);
                 
@@ -184,12 +188,14 @@ public class Assembler {
                     // Nếu không phải là hằng số, tra cứu nhãn
                     int address = symbolTable.getAddress(operands[1]);
                     offset_cb = address - currentAddress; // Tính offset từ địa chỉ hiện tại
+                    System.out.println("Label '" + operands[1] + "' resolved to address: " + address + ", offset: " + offset_cb);
                 }
                 // Kiểm tra giới hạn của offset (giả sử -524288 đến 524287)
                 if (offset_cb < -524288 || offset_cb > 524287) {
                     throw new AssemblyException("Offset out of range: " + offset_cb);
                 }
-                return (opcode << 21) | ((offset_cb & 0x3FFFF) << 5) | rn_cb;
+                System.out.println("----------->" + BitUtils.toBinaryString32(opcode) + "\n" + BitUtils.toBinaryString32(rn_cb) + "\n" + BitUtils.toBinaryString32(offset_cb));
+                return (opcode << 24) | rn_cb | ((offset_cb & 0x7FFFF) << 5);
                 
             case IM_FORMAT:
                 checkOperands(pInstr, 2);

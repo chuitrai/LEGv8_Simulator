@@ -1,6 +1,6 @@
 package main.java.com.mydomain.legv8simulator.instruction;
 
-import main.java.com.mydomain.legv8simulator.utils.BitUtils;
+import main.java.com.mydomain.legv8simulator.utils.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -158,7 +158,7 @@ public class InstructionDecoder {
     private DFormatInstruction decodeDFormat(int mc, OpcodeInfo info) {
         int opcode = BitUtils.extractBits(mc, 21, 31);
         int dtAddress = BitUtils.extractBits(mc, 12, 20);
-        int op2 = BitUtils.extractBits(mc, 10, 11);
+        int op2 = BitUtils.extractBits(mc, 10, 11);     
         int rn = BitUtils.extractBits(mc, 5, 9);
         int rt = BitUtils.extractBits(mc, 0, 4);
         return new DFormatInstruction(mc, info.mnemonic, opcode, BitUtils.signExtend32(dtAddress, 9), op2, rn, rt);
@@ -171,14 +171,15 @@ public class InstructionDecoder {
     }
 
     private CBFormatInstruction decodeCBFormat(int mc, OpcodeInfo info) {
-        int opcode = BitUtils.extractBits(mc, 24, 31);
+        int opcode = BitUtils.extractBits(mc, 26, 31);
         String finalMnemonic = info.mnemonic;
-        int rtOrCond = BitUtils.extractBits(mc, 0, 9);
+        int rtOrCond = BitUtils.extractBits(mc, 0, 5);
         if ("B.cond".equals(finalMnemonic)) {
             finalMnemonic = getBranchConditionMnemonic(rtOrCond);
         }
 
-        int condBrAddress = BitUtils.extractBits(mc, 5, 23);
+        int condBrAddress = BitUtils.extractBits(mc, 5, 25);
+        System.out.println("condBrAddress: " + BitUtils.signExtend32(condBrAddress, 19));
         return new CBFormatInstruction(mc, finalMnemonic, opcode, BitUtils.signExtend32(condBrAddress, 19), rtOrCond);
     }
     

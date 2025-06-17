@@ -292,6 +292,27 @@ public final class BitUtils {
     }
 
     /**
+     * chuyển một đoạn bit của 1 giá trị binary thành số nguyên bù 2
+     * @param startBit
+     * @param endBit
+     * @return Chuỗi nhị phân của đoạn bit từ startBit đến endBit
+     */
+    public static int toSignedInt(int value, int startBit, int endBit) {
+        if (startBit < 0 || endBit > 31 || startBit > endBit) {
+            throw new IllegalArgumentException(String.format("Invalid bit range: start=%d, end=%d. Must be 0 <= start <= end <= 31.", startBit, endBit));
+        }
+        int numBits = endBit - startBit + 1;
+        int mask = (numBits == 32) ? -1 : ((1 << numBits) - 1);
+        int extractedValue = (value >>> startBit) & mask;
+        // Kiểm tra bit dấu
+        if ((extractedValue & (1 << (numBits - 1))) != 0) {
+            // Nếu bit dấu là 1, mở rộng dấu
+            extractedValue |= ~mask; // Mở rộng dấu cho các bit cao hơn
+        }
+        return extractedValue;
+    }
+
+    /**
      * Kết hợp hai giá trị 32-bit thành một giá trị 64-bit.
      * @param highBits 32 bit cao.
      * @param lowBits 32 bit thấp.

@@ -220,7 +220,7 @@ public class InstructionExecutor {
     }
 
     private void executeCBFormat(CBFormatInstruction i, long currentPC) {
-        long offset = (long) i.getCondBrAddress() * 4;
+        long offset = (long) i.getCondBrAddress(); 
         boolean takeBranch = false;
         String mnemonic = i.getOpcodeMnemonic();
 
@@ -231,6 +231,8 @@ public class InstructionExecutor {
         } else if (mnemonic.startsWith("B.")) {
             takeBranch = checkBranchCondition(mnemonic);
         }
+
+        System.out.println("offset: " + offset + ", takeBranch: " + takeBranch);
 
         if (takeBranch) {
             cpu.getPC().setValue(currentPC + offset);
