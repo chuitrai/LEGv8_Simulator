@@ -1,275 +1,213 @@
-// src/main/java/com/yourdomain/legv8simulator/instruction/InstructionDecoder.java
 package main.java.com.mydomain.legv8simulator.instruction;
 
-import main.java.com.mydomain.legv8simulator.utils.BitUtils;
-
+import main.java.com.mydomain.legv8simulator.utils.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Lớp InstructionDecoder hoạt động như một Factory, chịu trách nhiệm giải mã mã máy
+ * thành các đối tượng Instruction. Sử dụng nhiều HashMap để tra cứu hiệu quả
+ * các opcode có độ dài khác nhau.
+ *
+ * Cách tiếp cận: Định nghĩa tất cả các opcode hợp lệ một cách tường minh trong các
+ * bảng tra cứu. Phương thức decode() sẽ thử tra cứu tuần tự từ opcode dài nhất
+ * đến ngắn nhất để đảm bảo nhận dạng chính xác.
+ */
 public class InstructionDecoder {
 
-    // Inner class to store Opcode details from the table (page 86, Bài 05)
+    // Lớp nội bộ để lưu trữ thông tin về một opcode
     private static class OpcodeInfo {
-        final String mnemonic;
+        final String mnemonic; // Tên gợi nhớ ĐẦY ĐỦ, ví dụ: "ADDI", "ADDS"
         final InstructionFormat format;
-        final int opcodeValue; // The actual opcode bits used for matching
-        final int opcodeSize;  // Number of bits in this specific opcode
 
-        public OpcodeInfo(String mnemonic, InstructionFormat format, int opcodeValue, int opcodeSize) {
+        OpcodeInfo(String mnemonic, InstructionFormat format) {
             this.mnemonic = mnemonic;
             this.format = format;
-            this.opcodeValue = opcodeValue;
-            this.opcodeSize = opcodeSize;
         }
     }
 
-    // Lookup table for opcodes.
-    // Key: Opcode value (masked and shifted). Value: OpcodeInfo object.
-    // This table needs to be populated based on the "Giải mã lệnh LEGv8" slide.
-    // The key generation will depend on how you decide to differentiate opcodes of different lengths.
-    // A common approach is to use the longest possible opcode match or use ranges.
-    // For simplicity here, we'll assume a way to get a unique identifier for each opcode entry.
-    private static final Map<Integer, OpcodeInfo> OPCODE_TABLE = new HashMap<>();
+    // Các bảng tra cứu riêng cho từng độ dài opcode
+    private static final Map<Integer, OpcodeInfo> TABLE_OPCODE_6_BIT = new HashMap<>();
+    private static final Map<Integer, OpcodeInfo> TABLE_OPCODE_8_BIT = new HashMap<>();
+    private static final Map<Integer, OpcodeInfo> TABLE_OPCODE_9_BIT = new HashMap<>();
+    private static final Map<Integer, OpcodeInfo> TABLE_OPCODE_10_BIT = new HashMap<>();
+    private static final Map<Integer, OpcodeInfo> TABLE_OPCODE_11_BIT = new HashMap<>();
 
+    // Khối static để điền dữ liệu vào các bảng tra cứu một lần duy nhất
     static {
-        // Populate the OPCODE_TABLE based on "Giải mã lệnh LEGv8" (page 86, Bài 05)
-        // This is a crucial and detailed step.
-        // Note: The 'opcodeValue' here is the specific bit pattern for that opcode
-        // and 'opcodeSize' is its length. The key for the map might need
-        // to be a combination or a specific extraction that uniquely identifies it.
+        // --- B-FORMAT (6-bit opcode, bits 31-26) ---
+        TABLE_OPCODE_6_BIT.put(0b000101, new OpcodeInfo("B", InstructionFormat.B_FORMAT));
+        TABLE_OPCODE_6_BIT.put(0b100101, new OpcodeInfo("BL", InstructionFormat.B_FORMAT));
 
-        // --- B-FORMAT ---
-        // B: 000101 (6 bits), range 160-191 (if opcode is bits 31-26)
-        addOpcode("B", InstructionFormat.B_FORMAT, 0b000101, 6, 26, 31);
-        // BL: 100101 (6 bits), range 1184-1215
-        addOpcode("BL", InstructionFormat.B_FORMAT, 0b100101, 6, 26, 31);
+        // --- CB-FORMAT (8-bit opcode, bits 31-24) ---
+        TABLE_OPCODE_8_BIT.put(0b10110100, new OpcodeInfo("CBZ", InstructionFormat.CB_FORMAT));
+        TABLE_OPCODE_8_BIT.put(0b10110101, new OpcodeInfo("CBNZ", InstructionFormat.CB_FORMAT));
+        TABLE_OPCODE_8_BIT.put(0b01010100, new OpcodeInfo("B.cond", InstructionFormat.CB_FORMAT));
 
-        // --- CB-FORMAT ---
-        // CBZ: 10110100 (8 bits), range 1440-1447
-        addOpcode("CBZ", InstructionFormat.CB_FORMAT, 0b10110100, 8, 24, 31);
-        // CBNZ: 10110101 (8 bits), range 1448-1455
-        addOpcode("CBNZ", InstructionFormat.CB_FORMAT, 0b10110101, 8, 24, 31);
-        // B.cond: 01010100 (8 bits for cond), range 672-679 (This is simplified for B.cond, real ARMv8 is different)
-        // For B.cond, the 'cond' field is in Rt (bits 0-4) of CB format.
-        // The opcode here represents the B.cond family.
-        addOpcode("B.cond", InstructionFormat.CB_FORMAT, 0b01010100, 8, 24, 31);
+        // --- IM-FORMAT (9-bit opcode, bits 31-23) ---
+        TABLE_OPCODE_9_BIT.put(0b110100101, new OpcodeInfo("MOVZ", InstructionFormat.IM_FORMAT));
+        TABLE_OPCODE_9_BIT.put(0b111100101, new OpcodeInfo("MOVK", InstructionFormat.IM_FORMAT));
 
-        // --- I-FORMAT --- (Opcode is 10 bits)
-        // ADDI: 1001000100 (10 bits), range 1160-1161
-        addOpcode("ADDI", InstructionFormat.I_FORMAT, 0b1001000100, 10, 22, 31);
-        // ADDIS: 1011000100 (10 bits), range 1416-1417
-        addOpcode("ADDIS", InstructionFormat.I_FORMAT, 0b1011000100, 10, 22, 31);
-        // SUBI: 1101000100 (10 bits), range 1672-1673
-        addOpcode("SUBI", InstructionFormat.I_FORMAT, 0b1101000100, 10, 22, 31);
-        // SUBIS: 1111000100 (10 bits), range 1928-1929
-        addOpcode("SUBIS", InstructionFormat.I_FORMAT, 0b1111000100, 10, 22, 31);
-        // ANDI: 1001001000 (10 bits)
-        addOpcode("ANDI", InstructionFormat.I_FORMAT, 0b1001001000, 10, 22, 31);
-        // ANDIS: 1111001000 (10 bits)
-        addOpcode("ANDIS", InstructionFormat.I_FORMAT, 0b1111001000, 10, 22, 31);        
-        // ORRI: 1011001000 (10 bits)
-        addOpcode("ORRI", InstructionFormat.I_FORMAT, 0b1011001000, 10, 22, 31);
-        // EORI: 1101001000 (10 bits)
-        addOpcode("EORI", InstructionFormat.I_FORMAT, 0b1101001000, 10, 22, 31);
+        // --- I-FORMAT (10-bit opcode, bits 31-22) ---
+        TABLE_OPCODE_10_BIT.put(0b1001000100, new OpcodeInfo("ADDI", InstructionFormat.I_FORMAT));
+        TABLE_OPCODE_10_BIT.put(0b1101000100, new OpcodeInfo("SUBI", InstructionFormat.I_FORMAT));
+        TABLE_OPCODE_10_BIT.put(0b1001001000, new OpcodeInfo("ANDI", InstructionFormat.I_FORMAT));
+        TABLE_OPCODE_10_BIT.put(0b1111001000, new OpcodeInfo("ORRI", InstructionFormat.I_FORMAT));
+        TABLE_OPCODE_10_BIT.put(0b1101001000, new OpcodeInfo("EORI", InstructionFormat.I_FORMAT));
+
+        // --- R-FORMAT (11-bit opcode, bits 31-21) ---
+        TABLE_OPCODE_11_BIT.put(0b11010001001, new OpcodeInfo("SUBIS", InstructionFormat.I_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10010001001, new OpcodeInfo("ADDIS", InstructionFormat.I_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10001011000, new OpcodeInfo("ADD", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10001011001, new OpcodeInfo("ADDS", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11001011000, new OpcodeInfo("SUB", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11001011001, new OpcodeInfo("SUBS", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10001010000, new OpcodeInfo("AND", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10001010001, new OpcodeInfo("ANDS", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10101010000, new OpcodeInfo("ORR", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10111010000, new OpcodeInfo("ORRS", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11001010000, new OpcodeInfo("EOR", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10011011000, new OpcodeInfo("MUL", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11010011011, new OpcodeInfo("LSL", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11010011010, new OpcodeInfo("LSR", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11010011100, new OpcodeInfo("ASR", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11010110010, new OpcodeInfo("BR", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10011010110, new OpcodeInfo("SDIV", InstructionFormat.R_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10011010111, new OpcodeInfo("UDIV", InstructionFormat.R_FORMAT));
 
 
-        // --- D-FORMAT --- (Opcode is 11 bits)
-        // LDUR: 11111000010 (11 bits), range 1986
-        addOpcode("LDUR", InstructionFormat.D_FORMAT, 0b11111000010, 11, 21, 31);
-        // STUR: 11111000000 (11 bits), range 1984
-        addOpcode("STUR", InstructionFormat.D_FORMAT, 0b11111000000, 11, 21, 31);
-        // LDURSW: 10111000100 (11 bits)
-        addOpcode("LDURSW", InstructionFormat.D_FORMAT, 0b10111000100, 11, 21, 31);
-        // STURW: 10111000000 (11 bits)
-        addOpcode("STURW", InstructionFormat.D_FORMAT, 0b10111000000, 11, 21, 31);
-        // LDURH: 01111000010 (11 bits)
-        addOpcode("LDURH", InstructionFormat.D_FORMAT, 0b01111000010, 11, 21, 31);
-        // STURH: 01111000000 (11 bits)
-        addOpcode("STURH", InstructionFormat.D_FORMAT, 0b01111000000, 11, 21, 31);
-        // LDURB: 00111000010 (11 bits)
-        addOpcode("LDURB", InstructionFormat.D_FORMAT, 0b00111000010, 11, 21, 31);
-        // STURB: 00111000000 (11 bits)
-        addOpcode("STURB", InstructionFormat.D_FORMAT, 0b00111000000, 11, 21, 31);
-       
-
-        // --- R-FORMAT --- (Opcode is 11 bits)
-        // ADD: 10001011000 (11 bits), range 1112
-        addOpcode("ADD", InstructionFormat.R_FORMAT, 0b10001011000, 11, 21, 31);
-        // ADDS: 10101011000
-        addOpcode("ADDS", InstructionFormat.R_FORMAT, 0b10101011000, 11, 21, 31);
-        // SUB: 11001011000
-        addOpcode("SUB", InstructionFormat.R_FORMAT, 0b11001011000, 11, 21, 31);
-        // SUBS: 11101011000
-        addOpcode("SUBS", InstructionFormat.R_FORMAT, 0b11101011000, 11, 21, 31);
-        // AND: 10001010000
-        addOpcode("AND", InstructionFormat.R_FORMAT, 0b10001010000, 11, 21, 31);
-        // ANDS: 11101010000
-        addOpcode("ANDS", InstructionFormat.R_FORMAT, 0b11101010000, 11, 21, 31);
-        // ORR: 10101010000
-        addOpcode("ORR", InstructionFormat.R_FORMAT, 0b10101010000, 11, 21, 31);
-        // EOR: 11001010000
-        addOpcode("EOR", InstructionFormat.R_FORMAT, 0b11001010000, 11, 21, 31);
-        // LSL: 11010011011 (shamt is in Rm, instruction[21] is 0)
-        addOpcode("LSL", InstructionFormat.R_FORMAT, 0b11010011011, 11, 21, 31); // Actually checks bits 21-31, shamt is used.
-        // LSR: 11010011010
-        addOpcode("LSR", InstructionFormat.R_FORMAT, 0b11010011010, 11, 21, 31);
-        // BR: 11010110000
-        addOpcode("BR", InstructionFormat.R_FORMAT, 0b11010110000, 11, 21, 31);
-
-        // --- IM-FORMAT --- (Opcode is 9 bits, specific range)
-        // MOVZ: 110100101 (9 bits), range 1684-1687 (bits 31-23 for opcode)
-        addOpcode("MOVZ", InstructionFormat.IM_FORMAT, 0b110100101, 9, 23, 31);
-        // MOVK: 111100101 (9 bits), range 1940-1943
-        addOpcode("MOVK", InstructionFormat.IM_FORMAT, 0b111100101, 9, 23, 31);
+        // D-FORMAT
+        TABLE_OPCODE_11_BIT.put(0b11111000010, new OpcodeInfo("LDUR", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b11111000000, new OpcodeInfo("STUR", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10111000100, new OpcodeInfo("LDURSW", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b10111000000, new OpcodeInfo("STURW", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b01111000010, new OpcodeInfo("LDURH", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b01111000000, new OpcodeInfo("STURH", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b00111000010, new OpcodeInfo("LDURB", InstructionFormat.D_FORMAT));
+        TABLE_OPCODE_11_BIT.put(0b00111000000, new OpcodeInfo("STURB", InstructionFormat.D_FORMAT));
+        // TABLE_OPCODE_11_BIT.put(0b11001000000, new OpcodeInfo("STXR", InstructionFormat.D_FORMAT));
+        // TABLE_OPCODE_11_BIT.put(0b10001000010, new OpcodeInfo("LDXR", InstructionFormat.D_FORMAT));
     }
-
-    /**
-     * Helper method to populate the opcode table.
-     * The key in OPCODE_TABLE is the extracted opcode value itself.
-     * This assumes that opcodes of different lengths won't collide after extraction.
-     * For a more robust system, you might need a more complex key or multiple tables.
-     */
-    private static void addOpcode(String mnemonic, InstructionFormat format, int opcodePattern, int opcodeSize, int startBit, int endBit) {
-        // The key could be the pattern itself if sizes are handled carefully, or a range.
-        // For this example, we'll use the pattern directly.
-        // This simplistic approach assumes opcodes of different lengths are distinct enough
-        // or handled by the order of checks in the decode method.
-        OPCODE_TABLE.put(opcodePattern, new OpcodeInfo(mnemonic, format, opcodePattern, opcodeSize));
-    }
-
 
     public Instruction decode(int machineCode) {
-        // Try to match opcodes starting from the most specific (longest) to most general (shortest)
-        // or by fixed bit positions if the LEGv8 table (p86) implies fixed positions for opcodes of certain lengths.
-
         OpcodeInfo info;
 
-        // Check for 9-bit IM-Format opcodes (MOVZ, MOVK)
-        int op9 = BitUtils.extractBits(machineCode, 23, 31); // bits 31-23
-        info = OPCODE_TABLE.get(op9);
-        if (info != null && info.format == InstructionFormat.IM_FORMAT) {
-            return decodeIMFormat(machineCode, info);
-        }
+        // Ưu tiên 1: Opcode 11-bit (R, D)
 
-        // Check for 11-bit R-Format and D-Format opcodes
-        int op11 = BitUtils.extractBits(machineCode, 21, 31); // bits 31-21
-        info = OPCODE_TABLE.get(op11);
+        int op11 = BitUtils.extractBits(machineCode, 21, 31);
+        info = TABLE_OPCODE_11_BIT.get(op11);
         if (info != null) {
-            if (info.format == InstructionFormat.R_FORMAT) {
-                return decodeRFormat(machineCode, info);
-            } else if (info.format == InstructionFormat.D_FORMAT) {
-                return decodeDFormat(machineCode, info);
-            }
+            if (info.format == InstructionFormat.R_FORMAT) return decodeRFormat(machineCode, info);
+            if (info.format == InstructionFormat.I_FORMAT) return decodeIFormat(machineCode, info);
+            if (info.format == InstructionFormat.D_FORMAT) return decodeDFormat(machineCode, info);
         }
 
-        // Check for 10-bit I-Format opcodes
-        int op10 = BitUtils.extractBits(machineCode, 22, 31); // bits 31-22
-        info = OPCODE_TABLE.get(op10);
-        if (info != null && info.format == InstructionFormat.I_FORMAT) {
+        // Ưu tiên 2: Opcode 10-bit (I)
+        int op10 = BitUtils.extractBits(machineCode, 22, 31);
+        info = TABLE_OPCODE_10_BIT.get(op10);
+        if (info != null) {
             return decodeIFormat(machineCode, info);
         }
 
-        // Check for 8-bit CB-Format opcodes
-        int op8 = BitUtils.extractBits(machineCode, 24, 31); // bits 31-24
-        info = OPCODE_TABLE.get(op8);
-        if (info != null && info.format == InstructionFormat.CB_FORMAT) {
+        // Ưu tiên 3: Opcode 9-bit (IM)
+        int op9 = BitUtils.extractBits(machineCode, 23, 31);
+        info = TABLE_OPCODE_9_BIT.get(op9);
+        if (info != null) {
+            return decodeIMFormat(machineCode, info);
+        }
+
+        // Ưu tiên 4: Opcode 8-bit (CB)
+        int op8 = BitUtils.extractBits(machineCode, 24, 31);
+        info = TABLE_OPCODE_8_BIT.get(op8);
+        if (info != null) {
             return decodeCBFormat(machineCode, info);
         }
 
-        // Check for 6-bit B-Format opcodes
-        int op6 = BitUtils.extractBits(machineCode, 26, 31); // bits 31-26
-        info = OPCODE_TABLE.get(op6);
-        if (info != null && info.format == InstructionFormat.B_FORMAT) {
+        // Ưu tiên 5: Opcode 6-bit (B)
+        int op6 = BitUtils.extractBits(machineCode, 26, 31);
+        info = TABLE_OPCODE_6_BIT.get(op6);
+        if (info != null) {
             return decodeBFormat(machineCode, info);
         }
 
-        // If no match found
-        System.err.println("Unknown instruction: " + Integer.toBinaryString(machineCode) + " (Op11: " + Integer.toBinaryString(op11) + ")");
-        // You should return a specific "UnknownInstruction" object or throw an exception
+        // Nếu không tìm thấy, trả về lệnh không xác định
         return new UnknownInstruction(machineCode);
     }
-
-    private RFormatInstruction decodeRFormat(int machineCode, OpcodeInfo info) {
-        int rm = BitUtils.extractBits(machineCode, 16, 20);
-        int shamt = BitUtils.extractBits(machineCode, 10, 15);
-        int rn = BitUtils.extractBits(machineCode, 5, 9);
-        int rd = BitUtils.extractBits(machineCode, 0, 4);
-        System.out.println("Decoded R-format: " + info.mnemonic + " rm=" + rm + ", shamt=" + shamt + ", rn=" + rn + ", rd=" + rd);
-        return new RFormatInstruction(machineCode, info.mnemonic, info.opcodeValue, rd, rn, rm, shamt);
+    
+    // =========================================================================
+    // Các hàm giải mã cho từng định dạng
+    // =========================================================================
+    
+    private RFormatInstruction decodeRFormat(int mc, OpcodeInfo info) {
+        int opcode = BitUtils.extractBits(mc, 21, 31);
+        int rm = BitUtils.extractBits(mc, 16, 20);
+        int shamt = BitUtils.extractBits(mc, 10, 15);
+        int rn = BitUtils.extractBits(mc, 5, 9);
+        int rd = BitUtils.extractBits(mc, 0, 4);
+        return new RFormatInstruction(mc, info.mnemonic, opcode, rd, rn, rm, shamt);
     }
 
-    private IFormatInstruction decodeIFormat(int machineCode, OpcodeInfo info) {
-        int immediate = BitUtils.extractBits(machineCode, 10, 21); // 12 bits
-        int rd = BitUtils.extractBits(machineCode, 5, 9);
-        int rn = BitUtils.extractBits(machineCode, 0, 4);
-        // I-format immediate is signed
-        return new IFormatInstruction(machineCode, info.mnemonic, info.opcodeValue, BitUtils.signExtend32(immediate, 12), rn, rd);
+    private IFormatInstruction decodeIFormat(int mc, OpcodeInfo info) {
+        int opcode = BitUtils.extractBits(mc, 22, 31);
+        int immediate = BitUtils.extractBits(mc, 10, 20);
+        int rn = BitUtils.extractBits(mc, 5, 9);
+        int rd = BitUtils.extractBits(mc, 0, 4);
+        return new IFormatInstruction(mc, info.mnemonic, opcode, BitUtils.signExtend32(immediate, 12), rn, rd);
+    }
+    
+    private DFormatInstruction decodeDFormat(int mc, OpcodeInfo info) {
+        int opcode = BitUtils.extractBits(mc, 21, 31);
+        int dtAddress = BitUtils.extractBits(mc, 12, 20);
+        int op2 = BitUtils.extractBits(mc, 10, 11);     
+        int rn = BitUtils.extractBits(mc, 5, 9);
+        int rt = BitUtils.extractBits(mc, 0, 4);
+        return new DFormatInstruction(mc, info.mnemonic, opcode, BitUtils.signExtend32(dtAddress, 9), op2, rn, rt);
+    }
+    
+    private BFormatInstruction decodeBFormat(int mc, OpcodeInfo info) {
+        int opcode = BitUtils.extractBits(mc, 26, 31);
+        int brAddress = BitUtils.extractBits(mc, 0, 25);
+        return new BFormatInstruction(mc, info.mnemonic, opcode, BitUtils.signExtend32(brAddress, 26));
     }
 
-    private DFormatInstruction decodeDFormat(int machineCode, OpcodeInfo info) {
-        int dtAddress = BitUtils.extractBits(machineCode, 12, 20); // 9 bits, DT_address
-        int op2 = BitUtils.extractBits(machineCode, 10, 11);
-        int rn = BitUtils.extractBits(machineCode, 5, 9);
-        int rt = BitUtils.extractBits(machineCode, 0, 4);
-        // D-format address (offset) is signed
-        return new DFormatInstruction(machineCode, info.mnemonic, info.opcodeValue, BitUtils.signExtend32(dtAddress, 9), op2, rn, rt);
-    }
-
-    private BFormatInstruction decodeBFormat(int machineCode, OpcodeInfo info) {
-        int brAddress = BitUtils.extractBits(machineCode, 0, 25); // 26 bits
-        // B-format address is signed and word-aligned (implicitly *4)
-        return new BFormatInstruction(machineCode, info.mnemonic, info.opcodeValue, BitUtils.signExtend32(brAddress, 26));
-    }
-
-    private CBFormatInstruction decodeCBFormat(int machineCode, OpcodeInfo info) {
-        int condBrAddress = BitUtils.extractBits(machineCode, 5, 23); // 19 bits
-        int rtOrCond = BitUtils.extractBits(machineCode, 0, 4); // Register for CBZ/CBNZ, Cond for B.cond
-        // CB-format address is signed and word-aligned (implicitly *4)
-        String mnemonic = info.mnemonic;
-        if (mnemonic.equals("B.cond")) { // Adjust mnemonic for specific B.cond
-            mnemonic = getBranchConditionMnemonic(rtOrCond);
+    private CBFormatInstruction decodeCBFormat(int mc, OpcodeInfo info) {
+        int opcode = BitUtils.extractBits(mc, 26, 31);
+        String finalMnemonic = info.mnemonic;
+        int rtOrCond = BitUtils.extractBits(mc, 0, 5);
+        if ("B.cond".equals(finalMnemonic)) {
+            finalMnemonic = getBranchConditionMnemonic(rtOrCond);
         }
-        return new CBFormatInstruction(machineCode, mnemonic, info.opcodeValue, BitUtils.signExtend32(condBrAddress, 19), rtOrCond);
-    }
 
-    private IMFormatInstruction decodeIMFormat(int machineCode, OpcodeInfo info) {
-        int hw = BitUtils.extractBits(machineCode, 21, 22); // 2 bits
-        int immediate = BitUtils.extractBits(machineCode, 5, 20); // 16 bits
-        int rd = BitUtils.extractBits(machineCode, 0, 4);
-        // IM-format immediate is unsigned
-        return new IMFormatInstruction(machineCode, info.mnemonic, info.opcodeValue, hw, immediate, rd);
+        int condBrAddress = BitUtils.extractBits(mc, 5, 25);
+        System.out.println("condBrAddress: " + BitUtils.signExtend32(condBrAddress, 19));
+        return new CBFormatInstruction(mc, finalMnemonic, opcode, BitUtils.signExtend32(condBrAddress, 19), rtOrCond);
     }
-
-    // Helper to get B.cond mnemonic (simplified)
+    
+    private IMFormatInstruction decodeIMFormat(int mc, OpcodeInfo info) {
+        int opcode = BitUtils.extractBits(mc, 23, 31);
+        int hw = BitUtils.extractBits(mc, 21, 22);
+        int immediate = BitUtils.extractBits(mc, 5, 20);
+        int rd = BitUtils.extractBits(mc, 0, 4);
+        return new IMFormatInstruction(mc, info.mnemonic, opcode, hw, immediate, rd);
+    }
+    
     private String getBranchConditionMnemonic(int condField) {
         switch (condField) {
-            case 0b0000: return "B.EQ"; // Z=1
-            case 0b0001: return "B.NE"; // Z=0
-            case 0b0010: return "B.HS"; // C=1 (CS)
-            case 0b0011: return "B.LO"; // C=0 (CC)
-            case 0b0100: return "B.MI"; // N=1
-            case 0b0101: return "B.PL"; // N=0
-            case 0b0110: return "B.VS"; // V=1
-            case 0b0111: return "B.VC"; // V=0
-            case 0b1000: return "B.HI"; // C=1 && Z=0
-            case 0b1001: return "B.LS"; // C=0 || Z=1
-            case 0b1010: return "B.GE"; // N == V
-            case 0b1011: return "B.LT"; // N != V
-            case 0b1100: return "B.GT"; // Z=0 && N == V
-            case 0b1101: return "B.LE"; // Z=1 || N != V
-            // case 0b1110: return "B.AL"; (Always - though B instruction is preferred)
-            // case 0b1111: return "B.NV"; (Never - rarely used)
+            case 0b0000: return "B.EQ";
+            case 0b0001: return "B.NE";
+            case 0b0010: return "B.HS";
+            case 0b0011: return "B.LO";
+            case 0b0100: return "B.MI";
+            case 0b0101: return "B.PL";
+            case 0b0110: return "B.VS";
+            case 0b0111: return "B.VC";
+            case 0b1000: return "B.HI";
+            case 0b1001: return "B.LS";
+            case 0b1010: return "B.GE";
+            case 0b1011: return "B.LT";
+            case 0b1100: return "B.GT";
+            case 0b1101: return "B.LE";
             default: return "B.cond_UNKNOWN";
         }
-    }
-
-    // Placeholder for unrecognized instructions
-    public static class UnknownInstruction implements Instruction {
-        private final int machineCode;
-        public UnknownInstruction(int machineCode) { this.machineCode = machineCode; }
-        @Override public int getMachineCode() { return machineCode; }
-        @Override public InstructionFormat getFormat() { return InstructionFormat.UNKNOWN; }
-        @Override public String getOpcodeMnemonic() { return "UNKNOWN"; }
-        @Override public String toString() { return "UNKNOWN Instruction: " + Integer.toHexString(machineCode); }
     }
 }

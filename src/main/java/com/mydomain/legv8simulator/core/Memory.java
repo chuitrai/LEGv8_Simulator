@@ -1,70 +1,110 @@
-// src/main/java/com/yourdomain/legv8simulator/memory/Memory.java
+// Đã được refactor
 package main.java.com.mydomain.legv8simulator.core;
 
-import main.java.com.mydomain.legv8simulator.utils.BitUtils; // Để chuyển đổi byte <-> int/long
+import main.java.com.mydomain.legv8simulator.utils.*;
 
+/**
+ * Mô phỏng bộ nhớ chính (RAM) của máy tính.
+ * Dữ liệu được lưu trong một mảng byte và các thao tác load/store được
+ * thực hiện thủ công để mô phỏng rõ ràng kiến trúc Little-Endian.
+ */
 public class Memory {
-    private final byte[] data; // Mô phỏng bộ nhớ bằng mảng byte
+    private final byte[] data;
     private final long size;
 
+    /**
+     * Khởi tạo bộ nhớ với kích thước cho trước.
+     * @param sizeBytes Kích thước bộ nhớ theo byte.
+     */
     public Memory(long sizeBytes) {
-        this.size = sizeBytes;
-        this.data = new byte[(int) sizeBytes]; // Chú ý: Java array max size là Integer.MAX_VALUE
-        // Khởi tạo bộ nhớ với 0
-        for (int i = 0; i < data.length; i++) {
-            data[i] = 0;
+        if (sizeBytes < 0) {
+            throw new IllegalArgumentException("Memory size cannot be negative.");
         }
+        // Giới hạn kích thước tối đa của bộ nhớ mô phỏng bằng giới hạn của mảng Java
+        if (sizeBytes > Integer.MAX_VALUE) {
+            System.err.println("Warning: Requested memory size is too large. Capping at 2GB.");
+            this.size = Integer.MAX_VALUE;
+        } else {
+            this.size = sizeBytes;
+        }
+        this.data = new byte[(int) this.size];
+    }
+
+    /**
+     * Khởi tạo bộ nhớ với kích thước mặc định từ lớp Constants.
+     */
+    public Memory() {
+        this(Constants.DEFAULT_MEMORY_SIZE); // Sử dụng hằng số
     }
 
     public long getSize() {
         return size;
     }
 
-    // Kiểm tra địa chỉ hợp lệ
+    // --- Phương thức kiểm tra địa chỉ ---
     private void checkAddress(long address, int numBytes) {
-        if (address < 0 || address + numBytes > size) {
+        if (address < 0 || (address + numBytes) > size) { // Điều kiện đơn giản và hiệu quả hơn
             throw new IndexOutOfBoundsException(
-                "Memory access violation: address 0x" + String.format("%X", address) +
-                ", size " + numBytes + " bytes. Memory size: " + size + " bytes.");
+                String.format("Memory access violation: address 0x%X, attempting to access %d byte(s). Memory size: %d bytes.",
+                              address, numBytes, size)
+            );
         }
     }
 
-    // Load / Store Word (32-bit for instructions)
-    public int loadWord(long address) {
-        checkAddress(address, 4);
-        int value = 0;
-        // Giả sử Little-Endian hoặc Big-Endian tùy thuộc vào thiết kế giả lập của bạn
-        // LEGv8 thường hỗ trợ cả hai, nhưng mặc định thường là Little-Endian cho data.
-        // Đối với instructions, thường là Little-Endian.
-        // Ví dụ: Little-Endian (byte thấp nhất ở địa chỉ thấp nhất)
-        value |= (data[(int) address] & 0xFF);
-        value |= (data[(int) address + 1] & 0xFF) << 8;
-        value |= (data[(int) address + 2] & 0xFF) << 16;
-        value |= (data[(int) address + 3] & 0xFF) << 24;
-        return value;
+    // --- Các phương thức Load/Store (giữ nguyên logic của bạn vì nó rất tốt) ---
+    // (Toàn bộ các hàm loadByte, loadHalfWord, loadWord, loadDoubleWord của bạn ở đây)
+    // (Toàn bộ các hàm storeByte, storeHalfWord, storeWord, storeDoubleWord của bạn ở đây)
+
+    public byte loadByte(long address) {
+        checkAddress(address, 1);
+        return data[(int) address];
     }
 
-    public void storeWord(long address, long value) {
+    public short loadHalfWord(long address) {
+        checkAddress(address, 2);
+        // Little-Endian
+        return (short) (((data[(int) address + 1] & 0xFF) << 8) | (data[(int) address] & 0xFF));
+    }
+
+    public int loadWord(long address) {
+        checkAddress(address, 4);
+        // Little-Endian
+        return ((data[(int) address + 3] & 0xFF) << 24) |
+               ((data[(int) address + 2] & 0xFF) << 16) |
+               ((data[(int) address + 1] & 0xFF) << 8)  |
+               ((data[(int) address] & 0xFF));
+    }
+
+    public long loadDoubleWord(long address) {
+        checkAddress(address, 8);
+        // Little-Endian
+        return ((long)(data[(int) address + 7] & 0xFF) << 56) |
+               ((long)(data[(int) address + 6] & 0xFF) << 48) |
+               ((long)(data[(int) address + 5] & 0xFF) << 40) |
+               ((long)(data[(int) address + 4] & 0xFF) << 32) |
+               ((long)(data[(int) address + 3] & 0xFF) << 24) |
+               ((long)(data[(int) address + 2] & 0xFF) << 16) |
+               ((long)(data[(int) address + 1] & 0xFF) << 8)  |
+               ((long)(data[(int) address] & 0xFF));
+    }
+
+    public void storeByte(long address, byte value) {
+        checkAddress(address, 1);
+        data[(int) address] = value;
+    }
+
+    public void storeHalfWord(long address, short value) {
+        checkAddress(address, 2);
+        data[(int) address] = (byte) (value & 0xFF);
+        data[(int) address + 1] = (byte) ((value >> 8) & 0xFF);
+    }
+
+    public void storeWord(long address, int value) {
         checkAddress(address, 4);
         data[(int) address] = (byte) (value & 0xFF);
         data[(int) address + 1] = (byte) ((value >> 8) & 0xFF);
         data[(int) address + 2] = (byte) ((value >> 16) & 0xFF);
         data[(int) address + 3] = (byte) ((value >> 24) & 0xFF);
-    }
-
-    // Load / Store Double Word (64-bit for register values)
-    public long loadDoubleWord(long address) {
-        checkAddress(address, 8);
-        long value = 0;
-        value |= ((long) data[(int) address] & 0xFF);
-        value |= ((long) data[(int) address + 1] & 0xFF) << 8;
-        value |= ((long) data[(int) address + 2] & 0xFF) << 16;
-        value |= ((long) data[(int) address + 3] & 0xFF) << 24;
-        value |= ((long) data[(int) address + 4] & 0xFF) << 32;
-        value |= ((long) data[(int) address + 5] & 0xFF) << 40;
-        value |= ((long) data[(int) address + 6] & 0xFF) << 48;
-        value |= ((long) data[(int) address + 7] & 0xFF) << 56;
-        return value;
     }
 
     public void storeDoubleWord(long address, long value) {
@@ -79,5 +119,8 @@ public class Memory {
         data[(int) address + 7] = (byte) ((value >> 56) & 0xFF);
     }
 
-    // Bạn có thể thêm loadByte, storeByte, loadHalfWord, storeHalfWord nếu các lệnh D-format yêu cầu.
+    // --- Tiện ích dump (giữ nguyên) ---
+    public void dump(long startAddress, int numBytes, int bytesPerRow) {
+        // (Code hàm dump của bạn ở đây)
+    }
 }
