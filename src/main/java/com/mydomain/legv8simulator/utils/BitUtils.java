@@ -248,13 +248,7 @@ public final class BitUtils {
         // Ghi thanh nhóm 8 bit, mỗi nhóm cách nhau một dấu cách
         String binaryString = String.format("%32s", Integer.toBinaryString(value)).replace(' ', '0');
         StringBuilder formatted = new StringBuilder();
-        for (int i = 0; i < binaryString.length(); i++) {
-            formatted.append(binaryString.charAt(i));
-            if ((i + 1) % 8 == 0 && i < binaryString.length() - 1) {
-                formatted.append(' '); // Thêm dấu cách sau mỗi 8 bit
-            }
-        }
-        return formatted.toString();
+        return formatted.append(binaryString).insert(8, ' ').insert(17, ' ').insert(26, ' ').toString();
     }
 
     /**
