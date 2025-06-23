@@ -3,19 +3,6 @@
 
 This document summarizes the basic subset of LEGv8 instructions supported by this simulator.
 
-## Notation
-
-*   `Rd`, `Rn`, `Rm`, `Rt`: Denote general-purpose registers (X0-X30, XZR).
-*   `XZR`: Zero Register (Register 31), always reads as 0. Writing to XZR has no effect.
-*   `immN`: An N-bit immediate value.
-*   `#offset`: An immediate offset value.
-*   `label`: A symbolic address label.
-*   `shamt`: Shift amount.
-*   `cond`: Condition code for conditional branches.
-*   `SP`: Stack Pointer (X28).
-*   `LR`: Link Register (X30).
-*   `[Rn, #offset]`: Memory address calculated as `Rn + offset`.
-
 ## Instruction Formats
 
 The simulator primarily supports the following LEGv8 instruction formats:
@@ -137,30 +124,10 @@ Used for loading large immediate values into a register.
 | **MOVZ** | IM     | `Rd, #imm16, LSL #shift`  | `Rd = (imm16 << shift)` (zeros other bits)  | Move Wide with Zero. `shift` can be 0, 16, 32, 48. `imm16` is a 16-bit immediate. |
 | **MOVK** | IM     | `Rd, #imm16, LSL #shift`  | `Rd[N+15:N] = imm16` (keeps other bits)   | Move Wide with Keep. `shift` can be 0, 16, 32, 48. `imm16` is a 16-bit immediate. N is the shift amount. |
 
----
-
 ## VII. System and Pseudo-Instructions
 
 | Mnemonic | Type   | Operands             | Equivalent / Operation                 | Description                                        |
 | :------- | :----- | :------------------- | :------------------------------------- | :------------------------------------------------- |
-| **NOP**  | Pseudo |                      | `AND XZR, XZR, XZR` (or other no-op) | No Operation.                                      |
-| **MOV**  | Pseudo | `Rd, Rn`             | `ORR Rd, XZR, Rn`                      | Move register `Rn` to `Rd`.                          |
-| **CMP**  | Pseudo | `Rn, Rm`             | `SUBS XZR, Rn, Rm`                     | Compare `Rn` with `Rm`, sets flags.                |
-| **CMPI** | Pseudo | `Rn, #imm12`         | `SUBIS XZR, Rn, #imm12`                | Compare `Rn` with immediate, sets flags.           |
-| **NEG**  | Pseudo | `Rd, Rn`             | `SUB Rd, XZR, Rn`                      | Negate `Rn` and store in `Rd`.                     |
 | **HALT** | System |                      | (Special simulator instruction)        | Stops the simulation. (Not a standard LEGv8 instruction, but useful for simulators) |
 
----
-
-This summary covers a functional subset. The full LEGv8 architecture includes more instructions and addressing modes. Refer to official ARMv8 documentation for a complete specification.
 ```
-
-**Những điểm cần lưu ý khi sử dụng tài liệu này cho project của bạn:**
-
-1.  **Khả năng mở rộng:** Bắt đầu với một tập con nhỏ hơn nữa nếu cần (ví dụ: chỉ `ADD`, `SUB`, `LDUR`, `STUR`, `CBZ`, `B`). Sau đó, bạn có thể dễ dàng thêm các lệnh khác vào trình mô phỏng dựa trên cấu trúc này.
-2.  **Mã Opcode và op2:** Tài liệu này không chỉ định giá trị bit cụ thể cho `opcode` hay `op2`. Bạn sẽ cần tham khảo tài liệu LEGv8 đầy đủ (như cuốn "Computer Organization and Design ARM Edition") hoặc quyết định một sơ đồ mã hóa riêng cho tập con của mình để `InstructionDecoder` hoạt động. Slide "Giải mã lệnh LEGv8" (trang 86 của "Bài 05: Kiến trúc LEGv8") là một tài liệu tham khảo tuyệt vời cho việc này.
-3.  **Lệnh nhân (MUL):** LEGv8 có các lệnh nhân phức tạp hơn (`SMULL`, `UMULL` để tạo kết quả 128-bit). Lệnh `MUL` đơn giản được liệt kê ở đây là một phiên bản rút gọn, chỉ lấy 64 bit thấp của kết quả, thường thấy trong các tập lệnh RISC cơ bản.
-4.  **Lệnh `B.cond`:** Trong LEGv8 đầy đủ, `B.cond` có định dạng riêng. Ở đây, nó được ghi chú là "B (variant)" và sử dụng một encoding tương tự CB-format (19-bit offset) để đơn giản hóa cho tập con cơ bản.
-5.  **`BR Rn`:** Được thực hiện bằng R-format với các trường `Rm`, `shamt`, `Rd` được đặt thành `XZR` hoặc giá trị không dùng đến, chỉ `Rn` mang ý nghĩa.
-6.  **Lệnh giả (Pseudo-Instructions):** Rất quan trọng để làm cho việc viết assembly dễ dàng hơn. Trình hợp dịch của bạn sẽ chịu trách nhiệm chuyển đổi chúng thành một hoặc nhiều lệnh máy LEGv8 thực sự.
-7.  **Lệnh `HALT`:** Đây không phải là một lệnh LEGv8 tiêu chuẩn nhưng rất hữu ích trong một trình mô phỏng để biết khi nào chương trình kết thúc. Bạn có thể implement nó bằng một mã opcode đặc biệt mà trình mô phỏng của bạn nhận diện.

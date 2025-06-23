@@ -2,8 +2,7 @@
 package main.java.com.mydomain.legv8simulator.instruction;
 
 /**
- * Base interface for all LEGv8 instructions.
- * Provides a common way to access the original machine code and its type.
+ * Base interface for LEGv8 instructions.
  */
 public interface Instruction {
     /**
@@ -20,11 +19,9 @@ public interface Instruction {
 
     /**
      * Gets the opcode mnemonic for this instruction (e.g., "ADD", "LDUR").
-     * This might be determined during decoding or execution.
      * @return The opcode mnemonic string.
      */
     String getOpcodeMnemonic();
 
-    // You might add more common methods here later, e.g.,
     // String toAssemblyString(); // To convert back to assembly representation
 }

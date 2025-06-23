@@ -1,315 +1,132 @@
 package main.java.com.mydomain.legv8simulator.core;
 
-import  main.java.com.mydomain.legv8simulator.core.Memory; // Giả định bạn có lớp Memory
-import  main.java.com.mydomain.legv8simulator.instruction.*; // Import tất cả các loại lệnh
+import main.java.com.mydomain.legv8simulator.utils.Constants;
 
+/**
+ * Lớp CPU chính, đóng vai trò một "container" và bộ điều phối cho các thành phần
+ * phần cứng cốt lõi như RegisterFile, PC, và FlagsRegister.
+ * Nó chỉ chứa trạng thái, không chứa logic thực thi lệnh.
+ */
 public class CPU {
-    // Kích thước thanh ghi LEGv8 là 64-bit, nên dùng long
-    private final long[] registers; // X0-X30, X31 là XZR (Zero Register)
-    private long programCounter;   // PC: Địa chỉ của lệnh hiện tại
-    private final Memory memory;     // Bộ nhớ chính
-    private final InstructionDecoder decoder; // Bộ giải mã lệnh
 
-    // Các hằng số cho thanh ghi
-    public static final int NUM_REGISTERS = 32; // X0 - X30, XZR (X31)
-    public static final int XZR = 31; // Index của Zero Register
+    // --- CÁC THÀNH PHẦN PHẦN CỨNG CON CỦA CPU ---
+    private final RegisterFile registerFile;
+    private final Register programCounter;
+    private final FlagsRegister flagsRegister;
 
-    public CPU(Memory memory) {
-        this.memory = memory;
-        this.registers = new long[NUM_REGISTERS];
-        // Khởi tạo các thanh ghi về 0
-        for (int i = 0; i < NUM_REGISTERS; i++) {
-            registers[i] = 0;
+    /**
+     * Lớp nội để quản lý các cờ trạng thái (PSTATE).
+     * Được đóng gói bên trong CPU để đảm bảo tính toàn vẹn.
+     */
+    public static class FlagsRegister {
+        private boolean N, Z, C, V; // Negative, Zero, Carry, Overflow
+
+        public void reset() {
+            N = false;
+            Z = false; 
+            C = false;
+            V = false;
         }
-        // XZR (X31) luôn là 0, ghi vào nó sẽ không có tác dụng
-        // Trong quá trình thực thi, ta sẽ đảm bảo nó luôn là 0
+        
+        // --- Getters for flags ---
+        public boolean isN() { return N; }
+        public boolean isZ() { return Z; }
+        public boolean isC() { return C; }
+        public boolean isV() { return V; }
+        
+        // --- Các phương thức cập nhật cờ ---
+        // Sẽ được gọi bởi InstructionExecutor
 
-        this.programCounter = 0; // Bắt đầu từ địa chỉ 0
-        this.decoder = new InstructionDecoder();
+        // -- Setters for flags ---
+        public void setN(boolean n) { this.N = n; }
+        public void setZ(boolean z) { this.Z = z; }
+        public void setC(boolean c) { this.C = c; }
+        public void setV(boolean v) { this.V = v; }
+
+        public void updateNZ(long result) {
+            this.N = (result < 0);
+            this.Z = (result == 0);
+        }
+
+        public void updateCVForAdd(long operand1, long operand2, long result) {
+            // Carry for addition (unsigned overflow)
+            this.C = (Long.compareUnsigned(result, operand1) < 0);
+            // Overflow for addition (signed overflow)
+            this.V = ((operand1 > 0 && operand2 > 0 && result < 0) ||
+                      (operand1 < 0 && operand2 < 0 && result >= 0));
+        }
+
+        public void updateCVForSub(long operand1, long operand2, long result) {
+            // Carry for subtraction (no borrow)
+            this.C = (Long.compareUnsigned(operand1, operand2) >= 0);
+            // Overflow for subtraction (signed overflow)
+            this.V = ((operand1 > 0 && operand2 < 0 && result < 0) ||
+                      (operand1 < 0 && operand2 > 0 && result >= 0));
+        }
+
+        /**
+         * Cập nhật tất cả các cờ từ một đối tượng ALUResult.
+         * @param aluResult Kết quả trả về từ ALU.
+         */
+        public void updateFlags(ALUResult aluResult) {
+            this.N = aluResult.isFlagN();
+            this.Z = aluResult.isFlagZ();
+            this.C = aluResult.isFlagC();
+            this.V = aluResult.isFlagV();
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("N=%d Z=%d C=%d V=%d", N?1:0, Z?1:0, C?1:0, V?1:0);
+        }
+    }
+
+    // --- CONSTRUCTOR CỦA CPU ---
+    public CPU() {
+        this.registerFile = new RegisterFile(Constants.REGISTER_COUNT);
+        this.programCounter = new Register("PC", RegisterType.PROGRAM_COUNTER);
+        this.flagsRegister = new FlagsRegister();
+        reset();
     }
 
     /**
-     * Nạp một chương trình vào bộ nhớ và đặt PC về điểm bắt đầu.
-     * @param startAddress Địa chỉ bắt đầu nạp chương trình.
-     * @param machineCode Program bytes to load into memory.
+     * Đặt lại (reset) toàn bộ CPU về trạng thái ban đầu.
+     * Ủy quyền việc reset cho các thành phần con.
      */
-    public void loadProgram(long startAddress, int[] machineCode) {
-        // Ví dụ: Giả định machineCode là một mảng các int (32-bit instruction)
-        // và mỗi lệnh chiếm 4 byte
-        for (int i = 0; i < machineCode.length; i++) {
-            memory.storeWord(startAddress + (i * 4), machineCode[i]);
-        }
-        this.programCounter = startAddress; // Đặt PC về địa chỉ bắt đầu chương trình
-        System.out.println("Program loaded at address: 0x" + String.format("%X", startAddress));
+    public void reset() {
+        this.registerFile.reset();
+        this.programCounter.reset();
+        this.flagsRegister.reset();
     }
 
-    /**
-     * Chạy trình giả lập.
-     * @param maxInstructions Tối đa số lệnh để chạy (để tránh vòng lặp vô hạn)
-     */
-    public void run(int maxInstructions) {
-        int instructionCount = 0;
-        System.out.println("Starting CPU simulation...");
-        while (instructionCount < maxInstructions) {
-            // Đảm bảo XZR luôn là 0 (X31)
-            registers[XZR] = 0;
-
-            // Bước 1: Fetch (Đọc lệnh từ bộ nhớ)
-            int machineCode;
-            try {
-                // Đọc một từ (4 byte) từ bộ nhớ
-                machineCode = memory.loadWord(programCounter);
-                System.out.println("\nPC: 0x" + String.format("%X", programCounter) +
-                                   ", Machine Code: 0x" + String.format("%08X", machineCode));
-            } catch (IndexOutOfBoundsException e) {
-                System.err.println("Error: Attempted to fetch instruction from invalid memory address 0x" + String.format("%X", programCounter));
-                break; // Dừng nếu truy cập bộ nhớ không hợp lệ
-            }
-
-            // Bước 2: Decode (Giải mã lệnh)
-            Instruction instruction;
-            try {
-                instruction = decoder.decode(machineCode);
-                System.out.println("Decoded: " + instruction.toString());
-            } catch (IllegalArgumentException | UnsupportedOperationException e) {
-                System.err.println("Error decoding instruction: " + e.getMessage());
-                break; // Dừng nếu giải mã lỗi
-            }
-
-            // Bước 3: Execute (Thực thi lệnh)
-            long nextPC = programCounter + 4; // Mặc định PC tăng 4 (next instruction)
-            try {
-                nextPC = execute(instruction, nextPC);
-            } catch (Exception e) {
-                System.err.println("Error executing instruction: " + e.getMessage());
-                break; // Dừng nếu thực thi lỗi
-            }
-
-            programCounter = nextPC;
-            instructionCount++;
-
-            // Kiểm tra điều kiện dừng (ví dụ: PC vượt quá giới hạn bộ nhớ hợp lệ)
-            if (programCounter < 0 || programCounter >= memory.getSize()) { // Giả định memory.getSize() trả về kích thước tối đa của bộ nhớ
-                System.out.println("End of program or invalid PC address reached.");
-                break;
-            }
-        }
-        System.out.println("\nSimulation finished after " + instructionCount + " instructions.");
-        printRegisters();
+    // --- CUNG CẤP CÁC PHƯƠNG THỨC TRUY CẬP (GETTERS) ĐẾN CÁC THÀNH PHẦN CON ---
+    // Các lớp khác (Simulator, Executor) sẽ dùng các getter này để tương tác với CPU.
+    
+    public RegisterFile getRegisterFile() {
+        return registerFile;
     }
 
-    /**
-     * Thực thi một lệnh.
-     * Đây sẽ là phần phức tạp nhất, cần xử lý từng loại lệnh.
-     * @param instruction Đối tượng lệnh đã được giải mã.
-     * @param defaultNextPC PC mặc định nếu lệnh không phải là nhánh.
-     * @return Địa chỉ PC mới.
-     */
-    private long execute(Instruction instruction, long defaultNextPC) {
-        long currentPC = programCounter; // Lưu lại PC hiện tại trước khi thực thi
-
-        switch (instruction.getFormat()) {
-            case R_FORMAT:
-                return executeRFormat((RFormatInstruction) instruction, defaultNextPC);
-            case I_FORMAT:
-                return executeIFormat((IFormatInstruction) instruction, defaultNextPC);
-            case D_FORMAT:
-                return executeDFormat((DFormatInstruction) instruction, defaultNextPC);
-            case B_FORMAT:
-                return executeBFormat((BFormatInstruction) instruction, currentPC); // B-format branches relative to current PC
-            case CB_FORMAT:
-                return executeCBFormat((CBFormatInstruction) instruction, currentPC); // CB-format branches relative to current PC
-            // Thêm các định dạng khác khi bạn implement chúng
-            default:
-                throw new UnsupportedOperationException("Execution of " + instruction.getFormat() + " not yet implemented.");
-        }
-    }
-
-    // --- Các phương thức thực thi lệnh theo định dạng ---
-
-    private long executeRFormat(RFormatInstruction instr, long defaultNextPC) {
-        int rd = instr.getRd();
-        int rn = instr.getRn();
-        int rm = instr.getRm();
-        int shamt = instr.getShamt();
-
-        long valueRn = registers[rn];
-        long valueRm = registers[rm];
-
-        long result = 0;
-
-        switch (instr.getOpcodeMnemonic()) {
-            case "ADD":
-                result = valueRn + valueRm;
-                break;
-            case "SUB":
-                result = valueRn - valueRm;
-                break;
-            case "AND":
-                result = valueRn & valueRm;
-                break;
-            case "ORR":
-                result = valueRn | valueRm;
-                break;
-            case "LSL": // Logical Shift Left
-                result = valueRn << shamt;
-                break;
-            case "LSR": // Logical Shift Right
-                result = valueRn >>> shamt; // Unsigned right shift
-                break;
-            case "ASR": // Arithmetic Shift Right
-                result = valueRn >> shamt;  // Signed right shift
-                break;
-            case "BR": // Branch to Register
-                // Đối với BR, PC sẽ được cập nhật bằng giá trị trong thanh ghi Rn
-                return registers[rn]; // Cập nhật PC trực tiếp
-            default:
-                throw new UnsupportedOperationException("R-format instruction not implemented: " + instr.getOpcodeMnemonic());
-        }
-
-        // Ghi kết quả vào thanh ghi đích, trừ khi đó là XZR (X31)
-        if (rd != XZR) {
-            registers[rd] = result;
-        } else {
-            registers[XZR] = 0; // Đảm bảo XZR luôn là 0
-        }
-
-        return defaultNextPC; // PC tăng 4 mặc định
-    }
-
-    private long executeIFormat(IFormatInstruction instr, long defaultNextPC) {
-        int rd = instr.getRd();
-        int rn = instr.getRn();
-        long immediate = instr.getImmediate(); // Immediate đã được sign-extended
-
-        long valueRn = registers[rn];
-        long result = 0;
-
-        switch (instr.getOpcodeMnemonic()) {
-            case "ADDI":
-                result = valueRn + immediate;
-                break;
-            case "SUBI":
-                result = valueRn - immediate;
-                break;
-            // Thêm các lệnh I-format khác (ANDI, ORRI, EORI)
-            default:
-                throw new UnsupportedOperationException("I-format instruction not implemented: " + instr.getOpcodeMnemonic());
-        }
-
-        if (rd != XZR) {
-            registers[rd] = result;
-        } else {
-            registers[XZR] = 0;
-        }
-
-        return defaultNextPC;
-    }
-
-    private long executeDFormat(DFormatInstruction instr, long defaultNextPC) {
-        int rt = instr.getRt();
-        int rn = instr.getRn();
-        long dtAddress = instr.getDtAddress(); // Offset đã được sign-extended
-
-        long baseAddress = registers[rn];
-        long effectiveAddress = baseAddress + dtAddress;
-
-        switch (instr.getOpcodeMnemonic()) {
-            case "LDUR": // Load Register Unsigned Register
-                // Đọc một từ (long) từ bộ nhớ
-                if (rt != XZR) {
-                    registers[rt] = memory.loadWord(effectiveAddress); // Giả định loadWord trả về long
-                } else {
-                    registers[XZR] = 0;
-                }
-                break;
-            case "STUR": // Store Register Unsigned Register
-                // Ghi một từ (long) vào bộ nhớ
-                memory.storeWord(effectiveAddress, registers[rt]); // Giả định storeWord nhận long
-                break;
-            // Thêm các lệnh D-format khác nếu cần (LDURB, STURB, LDURH, STURH, v.v.)
-            default:
-                throw new UnsupportedOperationException("D-format instruction not implemented: " + instr.getOpcodeMnemonic());
-        }
-
-        return defaultNextPC;
-    }
-
-    private long executeBFormat(BFormatInstruction instr, long currentPC) {
-        // B-format: Nhảy tuyệt đối hoặc tương đối
-        // Trong LEGv8, địa chỉ nhánh thường là tương đối với PC hiện tại.
-        // Địa chỉ trong lệnh là "word-aligned", nghĩa là giá trị thực tế = brAddress * 4
-        long branchOffset = instr.getBrAddress() * 4; // Đã được sign-extended
-
-        // Địa chỉ nhánh = PC của lệnh tiếp theo + offset (PC + 4 + offset)
-        // Hoặc PC của lệnh hiện tại + offset (PC + offset)
-        // Trong LEGv8, địa chỉ nhánh (branch target address) = (PC của lệnh hiện tại) + offset
-        // offset là giá trị signed extended và nhân 4.
-        return currentPC + branchOffset; // Cập nhật PC
-    }
-
-    private long executeCBFormat(CBFormatInstruction instr, long currentPC) {
-        int rtOrCond = instr.getRtOrCond();
-        long condBrAddress = instr.getCondBrAddress() * 4; // Offset đã được sign-extended và nhân 4
-
-        boolean branchTaken = false;
-
-        switch (instr.getOpcodeMnemonic()) {
-            case "CBZ": // Compare and Branch on Zero
-                if (registers[rtOrCond] == 0) {
-                    branchTaken = true;
-                }
-                break;
-            case "CBNZ": // Compare and Branch on Non-Zero
-                if (registers[rtOrCond] != 0) {
-                    branchTaken = true;
-                }
-                break;
-            // Xử lý các lệnh B.cond (B.EQ, B.NE, ...)
-            // Điều này đòi hỏi bạn phải có một cách để theo dõi các cờ trạng thái (flags: N, Z, C, V)
-            // hoặc tính toán điều kiện dựa trên các thanh ghi và các phép toán trước đó.
-            // Hiện tại, chúng ta giả định bạn sẽ thêm logic cho các cờ này sau.
-            case "B.EQ": // Branch if Equal (Z flag set)
-                // Cần cơ chế để kiểm tra Z flag
-                // Ví dụ: if (flags.isZ()) branchTaken = true;
-                throw new UnsupportedOperationException("B.EQ requires flag implementation.");
-            case "B.NE": // Branch if Not Equal (Z flag clear)
-                // Cần cơ chế để kiểm tra Z flag
-                // Ví dụ: if (!flags.isZ()) branchTaken = true;
-                throw new UnsupportedOperationException("B.NE requires flag implementation.");
-            // ... thêm các điều kiện nhánh khác
-            default:
-                throw new UnsupportedOperationException("CB-format instruction not implemented: " + instr.getOpcodeMnemonic());
-        }
-
-        if (branchTaken) {
-            return currentPC + condBrAddress; // Nhảy
-        } else {
-            return currentPC + 4; // Tiếp tục lệnh kế tiếp
-        }
-    }
-
-    /**
-     * In ra trạng thái của các thanh ghi.
-     */
-    public void printRegisters() {
-        System.out.println("\n--- Registers State ---");
-        for (int i = 0; i < NUM_REGISTERS; i++) {
-            System.out.printf("X%d: 0x%016X (%d)\n", i, registers[i], registers[i]);
-        }
-        System.out.printf("PC: 0x%016X\n", programCounter);
-        System.out.println("-----------------------");
-    }
-
-    // Getter cho các thành phần khác (tùy chọn)
-    public long getProgramCounter() {
+    public Register getPC() {
         return programCounter;
     }
 
-    public long getRegister(int index) {
-        if (index < 0 || index >= NUM_REGISTERS) {
-            throw new IllegalArgumentException("Invalid register index: " + index);
+    public FlagsRegister getFlagsRegister() {
+        return flagsRegister;
+    }
+    
+    /**
+     * In trạng thái hiện tại của CPU ra console.
+     * Hữu ích cho việc gỡ lỗi.
+     */
+    public void printState() {
+        System.out.println("============== CPU State ==============");
+        long[] regs = registerFile.getAllRegisters();
+        for (int i = 0; i < Constants.REGISTER_COUNT; i++) {
+             // Lấy giá trị trực tiếp từ mảng để in
+            System.out.printf("X%-2d: %-20d (0x%016X)\n", i, regs[i], regs[i]);
         }
-        return registers[index];
+        System.out.println(programCounter.toString());
+        System.out.println("Flags: " + flagsRegister.toString());
+        System.out.println("=======================================");
     }
 }
