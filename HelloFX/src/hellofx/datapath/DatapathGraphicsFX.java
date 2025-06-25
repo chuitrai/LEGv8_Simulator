@@ -8,6 +8,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
@@ -29,8 +30,8 @@ public final class DatapathGraphicsFX {
     public static final Color BLACK = Color.BLACK;
     public static final Color WHITE = Color.WHITE;
     public static final Color GREY = Color.rgb(242, 242, 242);
-    public static final Color CONTROL_BLUE = Color.rgb(0, 176, 240);
-    public static final Color ARM_BLUE = Color.rgb(18, 140, 171);
+    public static final Color CONTROL_SIGNAL = Color.web("#3BA0E2");
+    public static final Color ARM_BLUE = Color.web("#44CAF3");
 
     /**
      * Vẽ một gạch chéo để thể hiện việc mở rộng dấu hoặc đệm zero.
@@ -159,9 +160,9 @@ public final class DatapathGraphicsFX {
     }
     
     public static void drawCompRect(GraphicsContext gc, double x, double y,
-                                    double width, double height, Color color) {
-        gc.setStroke(color);
-        gc.setFill(color); // Giả định fill cùng màu với stroke
+                                    double width, double height, Color colorLine, Color colorFill) {
+        gc.setStroke(colorLine);
+        gc.setFill(colorFill); // Giả định fill cùng màu với stroke
         gc.setLineWidth(2);
         gc.fillRect(x, y, width, height);
         gc.strokeRect(x, y, width, height);
@@ -171,8 +172,8 @@ public final class DatapathGraphicsFX {
      * Vẽ một hình ellipse thành phần với highlight tùy chọn.
      */
     public static void drawCompEllipse(GraphicsContext gc, double x, double y,
-                                       double width, double height, Color lineColor, boolean highlight) {
-        drawEllipse(gc, x, y, width, height, lineColor, highlight ? RED : GREY);
+                                       double width, double height, Color lineColor, Color fillColor, boolean highlight) {
+        drawEllipse(gc, x, y, width, height, highlight ? RED : lineColor, fillColor);
     }
     
     /**
@@ -206,9 +207,9 @@ public final class DatapathGraphicsFX {
     /**
      * Vẽ một ALU (Arithmetic Logic Unit).
      */
-    public static void drawALU(GraphicsContext gc, double x, double y, double width, double height, boolean highlight) {
-        gc.setFill(highlight ? RED : GREY);
-        gc.setStroke(BLACK);
+    public static void drawALU(GraphicsContext gc, double x, double y, double width, double height, Color colorLine, Color colorFill, boolean highlight) {
+        gc.setStroke(highlight ? RED : colorLine);
+        gc.setFill(colorFill);
         gc.setLineWidth(2);
 
         gc.beginPath();
@@ -339,69 +340,122 @@ public final class DatapathGraphicsFX {
         gc.fillPolygon(xPoints, yPoints, 3);
     }
 
-//... trong lớp DatapathGraphicsFX
-/**
- * Vẽ một bộ MUX (Multiplexer) bao gồm hai nửa hình tròn trên và dưới.
- * Đây là phiên bản chuyển đổi từ mã GWT Canvas gốc.
- *
- * @param gc             GraphicsContext để vẽ.
- * @param x              Tọa độ x của góc trên bên trái.
- * @param y              Tọa độ y của góc trên bên trái.
- * @param width          Chiều rộng của MUX.
- * @param height         Chiều cao tổng thể của MUX.
- * @param highlightTop   Highlight nửa trên nếu được chọn.
- * @param highlightBottom Highlight nửa dưới nếu được chọn.
- */
+    //... trong lớp DatapathGraphicsFX
+    /**
+     * Vẽ một bộ MUX (Multiplexer) bao gồm hai nửa hình tròn trên và dưới.
+     * Đây là phiên bản chuyển đổi từ mã GWT Canvas gốc.
+     *
+     * @param gc             GraphicsContext để vẽ.
+     * @param x              Tọa độ x của góc trên bên trái.
+     * @param y              Tọa độ y của góc trên bên trái.
+     * @param width          Chiều rộng của MUX.
+     * @param height         Chiều cao tổng thể của MUX.
+     * @param highlightTop   Highlight nửa trên nếu được chọn.
+     * @param highlightBottom Highlight nửa dưới nếu được chọn.
+     */
     public static void drawMux(GraphicsContext gc, double x, double y, double width, double height,
                             boolean highlightTop, boolean highlightBottom) {
+
+        double radius = width / 2;
+        double topArcCenterY = y + radius;
+        double bottomArcCenterY = y + height - radius;
+
+        gc.setFill(highlightTop ? RED : GREY);
+        gc.beginPath();
+        gc.moveTo(x, y + height / 2);
+        gc.lineTo(x, topArcCenterY);
+        gc.arc(x + radius, topArcCenterY, radius, radius, 180, -180);
+        gc.lineTo(x + width, y + height / 2);
+        gc.closePath();
+        gc.fill();
+
+        gc.setFill(highlightBottom ? RED : GREY);
+        gc.beginPath();
+        gc.moveTo(x + width, y + height / 2);
+        gc.lineTo(x + width, bottomArcCenterY);
+        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, 180);
+        gc.lineTo(x, y + height / 2);
+        gc.closePath();
+        gc.fill();
+        
         gc.setStroke(BLACK);
         gc.setLineWidth(2);
-        
-        // --- Vẽ nửa trên của MUX ---
         gc.beginPath();
-        gc.moveTo(x, y + height / 2); // Bắt đầu từ điểm giữa bên trái
         
-        // Bán kính của cung tròn sẽ bằng một nửa chiều rộng
-        double radius = width / 2;
-        double topArcCenterY = y + radius; // Tâm của cung tròn trên
-        
-        gc.lineTo(x, topArcCenterY); // Đi thẳng lên điểm bắt đầu của cung tròn
-        
-        // Vẽ cung tròn phía trên. Trong JavaFX, góc được tính bằng độ, 0 độ là 3 giờ.
-        // Bắt đầu từ 180 độ (9 giờ) và vẽ 180 độ theo hướng ngược chiều kim đồng hồ.
+        gc.moveTo(x, y + height / 2);
+        gc.lineTo(x, topArcCenterY);
         gc.arc(x + radius, topArcCenterY, radius, radius, 180, -180);
         
-        gc.lineTo(x + width, y + height / 2); // Nối đến điểm giữa bên phải
-        gc.closePath(); // Đóng hình
-        
-        // Tô màu cho nửa trên
-        gc.setFill(highlightTop ? RED : GREY);
-        gc.fill();
-        gc.stroke(); // Vẽ viền
-
-        
-        // --- Vẽ nửa dưới của MUX ---
-        gc.beginPath();
-        gc.moveTo(x + width, y + height / 2); // Bắt đầu từ điểm giữa bên phải
-        
-        double bottomArcCenterY = y + height - radius; // Tâm của cung tròn dưới
-        
-        gc.lineTo(x + width, bottomArcCenterY); // Đi thẳng xuống điểm bắt đầu của cung tròn
-        
-        // Vẽ cung tròn phía dưới. Bắt đầu từ 0 độ (3 giờ) và vẽ 180 độ theo hướng ngược chiều kim đồng hồ.
+        gc.lineTo(x + width, bottomArcCenterY);
         gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, -180);
         
-        gc.lineTo(x, y + height / 2); // Nối về điểm giữa bên trái
-        gc.closePath(); // Đóng hình
+        gc.closePath();
         
-        // Tô màu cho nửa dưới
-        gc.setFill(highlightBottom ? RED : GREY);
+        gc.stroke();
+
+        // Text
+        drawText(gc, "0", x + width * 0.5, y + height * 0.15, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+        drawTextBold(gc, "M\ru\rx", x + width * 0.5, y + height * 0.5, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+        drawText(gc, "1", x + width * 0.5, y + height * 0.85, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+    }
+    /**
+     * Vẽ một bộ MUX (Multiplexer) với màu viền và màu nền giống nhau cho cả hai nửa.
+     *
+     * @param gc             GraphicsContext để vẽ.
+     * @param x              Tọa độ x của góc trên bên trái.
+     * @param y              Tọa độ y của góc trên bên trái.
+     * @param width          Chiều rộng của MUX.
+     * @param height         Chiều cao tổng thể của MUX.
+     * @param borderColor    Màu viền.
+     * @param fillColor      Màu nền cho cả hai nửa.
+     */
+    public static void drawMux(GraphicsContext gc, double x, double y, double width, double height,
+                               Color borderColor, Color fillColor, boolean highlight) {
+
+        double radius = width / 2;
+        double topArcCenterY = y + radius;
+        double bottomArcCenterY = y + height - radius;
+
+        // Top half
+        gc.setFill(fillColor);
+        gc.beginPath();
+        gc.moveTo(x, y + height / 2);
+        gc.lineTo(x, topArcCenterY);
+        gc.arc(x + radius, topArcCenterY, radius, radius, 180, -180);
+        gc.lineTo(x + width, y + height / 2);
+        gc.closePath();
         gc.fill();
-        gc.stroke(); // Vẽ viền
-    } 
+
+        // Bottom half
+        gc.setFill(fillColor);
+        gc.beginPath();
+        gc.moveTo(x + width, y + height / 2);
+        gc.lineTo(x + width, bottomArcCenterY);
+        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, -180);
+        gc.lineTo(x, y + height / 2);
+        gc.closePath();
+        gc.fill();
+
+        // Border - highlight all if needed
+        gc.setLineWidth(2);
+        gc.setStroke(highlight ? RED : borderColor);
+        gc.beginPath();
+        gc.moveTo(x, y + height / 2);
+        gc.lineTo(x, topArcCenterY);
+        gc.arc(x + radius, topArcCenterY, radius, radius, 180, -180);
+        gc.lineTo(x + width, bottomArcCenterY);
+        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, -180);
+        gc.closePath();
+        gc.stroke();
+
+        // Text
+        drawText(gc, "0", x + width * 0.5, y + height * 0.15, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+        drawTextBold(gc, "M\ru\rx", x + width * 0.5, y + height * 0.5, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+        drawText(gc, "1", x + width * 0.5, y + height * 0.85, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+    }
     // HÀM VẼ CỔNG OR
     public static void drawOrGateHorizontal(GraphicsContext gc, double x, double y, double width, double height) {
-        gc.setStroke(CONTROL_BLUE);
+        gc.setStroke(CONTROL_SIGNAL);
         gc.setFill(WHITE);
         gc.setLineWidth(1.5);
         gc.beginPath();
@@ -422,16 +476,25 @@ public final class DatapathGraphicsFX {
     gc.fillText(text, x, y);
     }
 
+    public static void drawTextBold(GraphicsContext gc, String text, double x, double y, Color color, int size, TextAlignment alignment) {
+        Font originalFont = gc.getFont();
+        Font boldFont = Font.font(originalFont.getFamily(), FontWeight.BOLD, size);
+        gc.setFont(boldFont);
+        gc.setFill(color);
+        gc.setTextAlign(alignment);
+        gc.setTextBaseline(VPos.CENTER);
+        gc.fillText(text, x, y);
+        gc.setFont(originalFont);
+    }
+
     public static void drawFlagBox(GraphicsContext gc, String label, double x, double y, double size, int fontSize) {
         gc.setStroke(BLACK);
         gc.setFill(GREY);
         gc.setLineWidth(1.5);
         gc.fillRect(x, y, size, size);
         gc.strokeRect(x, y, size, size);
-        
-        // Vẽ chữ vào giữa ô
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.setTextBaseline(VPos.CENTER); // Căn giữa theo chiều dọc
-        drawText(gc, label, x + size / 2, y + size / 2, BLACK, fontSize, TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER); 
+        drawTextBold(gc, label, x + size / 2, y + size / 2, BLACK, fontSize, TextAlignment.CENTER);
     }
 }

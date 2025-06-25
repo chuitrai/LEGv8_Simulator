@@ -5,6 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -16,93 +17,88 @@ import hellofx.datapath.LEGv8Datapath;
 
 
 public class SimulatorApp extends Application {
-    // Model cho Register
-    public static class Register {
-        private String reg;
-        private String binVal;
-        private String decVal;
 
-        public Register(String reg, String binVal, String decVal) {
-            this.reg = reg;
-            this.binVal = binVal;
-            this.decVal = decVal;
+@Override
+public void start(Stage primaryStage) {
+    // Cửa sổ chính khởi động
+   Stage mainStage = new Stage();
+    VBox mainRoot = new VBox(20);
+    mainRoot.setPadding(new javafx.geometry.Insets(30));
+    mainRoot.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+    Label titleLabel = new Label("LEGv8 Simulator");
+    titleLabel.setId("title-label");
+    Button btnStart = new Button("Start");
+        btnStart.setId("start-button");
+
+        Button btnLoad = new Button("Select file");
+        btnLoad.setId("file-button");
+
+        Label fileLabel = new Label("File has not been selected yet");
+        fileLabel.setId("status-label");
+    
+    // Bố cục lại
+    mainRoot.getChildren().addAll(titleLabel, btnStart, btnLoad, fileLabel);
+    mainRoot.getStylesheets().add(getClass().getResource("style/style.css").toExternalForm()); // Thêm dòng này
+
+    Scene mainScene = new Scene(mainRoot, 350, 240);
+    mainStage.setTitle("LEGv8");
+    mainStage.setScene(mainScene);
+    mainStage.show();
+    TableView<String> fileContentTable = new TableView<>();
+
+    javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+    fileChooser.setTitle("Open Assembly File");
+    fileChooser.getExtensionFilters().addAll(
+        new javafx.stage.FileChooser.ExtensionFilter("Text Files", "*.asm", "*.txt"),
+        new javafx.stage.FileChooser.ExtensionFilter("All Files", "*.*")
+    );
+    final java.io.File[] selectedFile = {null};
+    
+
+    btnLoad.setOnAction(e -> {
+        // Kiểm tra nếu đã có file được chọn
+        if (selectedFile[0] != null) {
+            fileLabel.setText("File already selected: " + selectedFile[0].getName());
+            // Hiển thị cửa sổ chỉnh sửa file
+            TextFileEditor.show(mainStage, selectedFile[0]);
+            return;
         }
-
-        public String getReg() { return reg; }
-        public String getBinVal() { return binVal; }
-        public String getDecVal() { return decVal; }
-    }
-
-    // Model cho Instruction
-    public static class Instruction {
-        private String addr;
-        private String instruction;
-        private String comment;
-
-        public Instruction(String addr, String instruction, String comment) {
-            this.addr = addr;
-            this.instruction = instruction;
-            this.comment = comment;
+        java.io.File file = fileChooser.showOpenDialog(mainStage);
+        if (file != null) {
+            selectedFile[0] = file;
+            fileLabel.setText("Selected: " + file.getName());
+            // Hiển thị cửa sổ chỉnh sửa file
+            TextFileEditor.show(mainStage, file);
         }
+    });
 
-        public String getAddr() { return addr; }
-        public String getInstruction() { return instruction; }
-        public String getComment() { return comment; }
-    }
 
-    @Override
-    public void start(Stage primaryStage) {
-        // Cửa sổ Registers
-        TableView<Register> regTable = new TableView<>();
-        TableColumn<Register, String> regCol = new TableColumn<>("Reg");
-        regCol.setCellValueFactory(new PropertyValueFactory<>("reg"));
-        TableColumn<Register, String> binCol = new TableColumn<>("Bin Val");
-        binCol.setCellValueFactory(new PropertyValueFactory<>("binVal"));
-        TableColumn<Register, String> decCol = new TableColumn<>("Dec Val");
-        decCol.setCellValueFactory(new PropertyValueFactory<>("decVal"));
-        regTable.getColumns().addAll(regCol, binCol, decCol);
-        regTable.getItems().add(new Register("$0", "0000", "0"));
-        regTable.getItems().add(new Register("$s1", "0001", "5"));
-        regTable.getItems().add(new Register("$s2", "0010", "10"));
-        VBox regRoot = new VBox(regTable);
 
-        Stage regStage = new Stage();
-        regStage.setTitle("Registers");
-        Scene regScene = new Scene(regRoot, 300, 200);
-        regStage.setScene(regScene);
-        regStage.show();
+    // Khi nhấn Start, mở các cửa sổ chính và truyền dữ liệu vào Instruction Memory
+    btnStart.setOnAction(e -> {
+        mainStage.close();
 
-        // Cửa sổ Instruction Memory
-        TableView<Instruction> instrTable = new TableView<>();
-        TableColumn<Instruction, String> addrCol = new TableColumn<>("Addr");
-        addrCol.setCellValueFactory(new PropertyValueFactory<>("addr"));
-        TableColumn<Instruction, String> instrCol = new TableColumn<>("Instruction");
-        instrCol.setCellValueFactory(new PropertyValueFactory<>("instruction"));
-        TableColumn<Instruction, String> commentCol = new TableColumn<>("Comment");
-        commentCol.setCellValueFactory(new PropertyValueFactory<>("comment"));
-        instrTable.getColumns().addAll(addrCol, instrCol, commentCol);
-        instrTable.getItems().add(new Instruction("0", "add $s1, $s1, $s1", "#$5+$5"));
-        instrTable.getItems().add(new Instruction("4", "add $s4, $s1, $s0", "#$5+10"));
-        instrTable.getItems().add(new Instruction("8", "sub $s5, $s1, $s2", "#$5-3"));
+        RegisterWindow regWin = new RegisterWindow();
+        regWin.addRegister("$0", "0000", "0");
+        regWin.addRegister("$s1", "0001", "5");
+        regWin.addRegister("$s2", "0010", "10");
+        regWin.show();
 
-        // ...các cột và dữ liệu...
-        VBox instrRoot = new VBox(instrTable);
+        InstructionMemoryWindow instrWin = new InstructionMemoryWindow();
+        int addr = 0;
+        for (String line : fileContentTable.getItems()) {
+            instrWin.addInstruction(String.valueOf(addr), line, "");
+            addr += 4;
+        }
+        instrWin.show();
 
-        Stage instrStage = new Stage();
-        instrStage.setTitle("Instruction Memory");
-        Scene instrScene = new Scene(instrRoot, 400, 200);
-        instrStage.setScene(instrScene);
-        instrStage.show();
-
-        // Hiển thị cửa sổ LEGv8 Datapath khi chạy SimulatorApp
         LEGv8Datapath datapathPane = new LEGv8Datapath();
-
-        // 2. Đặt component đó vào Scene.
         Scene scene = new Scene(datapathPane, 1200, 800);
         primaryStage.setTitle("LEGv8 Datapath Visualization");
         primaryStage.setScene(scene);
         primaryStage.show();
-    }
+    });
+}
 
     
     public static void main(String[] args) {

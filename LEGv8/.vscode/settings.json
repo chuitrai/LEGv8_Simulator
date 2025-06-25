@@ -1,0 +1,9 @@
+{
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "C:/Program Files/Eclipse Adoptium/javafx-sdk-21.0.7/lib/*.jar"
+    ]
+    
+}
