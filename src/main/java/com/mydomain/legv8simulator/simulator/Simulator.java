@@ -181,9 +181,7 @@ public class Simulator extends Observable_demo {
         }
         
         long aluInput1 = id_ex_latch.readData1;
-        long aluInput2 = id_ex_latch.controlSignals.aluSrc ? 
-                        id_ex_latch.signExtendedImmediate : 
-                        id_ex_latch.readData2;
+        long aluInput2 = id_ex_latch.controlSignals.aluSrc ? id_ex_latch.signExtendedImmediate : id_ex_latch.readData2;
         
         ALUOperation op = id_ex_latch.controlSignals.aluOperation;
         ALUResult aluResult = alu.execute(op, aluInput1, aluInput2);
@@ -191,8 +189,7 @@ public class Simulator extends Observable_demo {
         System.out.printf("ALU Executing: %s(0x%X, 0x%X) -> 0x%X. ", op, aluInput1, aluInput2, aluResult.getResult());
         
         // writeRegAddr sẽ là thanh ghi đích để ghi kết quả ALU
-        int writeRegAddr = id_ex_latch.controlSignals.memWrite || id_ex_latch.controlSignals.memToReg ?
-                            id_ex_latch.rt : id_ex_latch.rd;
+        int writeRegAddr = id_ex_latch.controlSignals.reg2Loc ? id_ex_latch.rt : id_ex_latch.rd;
         System.out.println("Write Reg Addr: X" + writeRegAddr + ". ");
         
         System.out.println();

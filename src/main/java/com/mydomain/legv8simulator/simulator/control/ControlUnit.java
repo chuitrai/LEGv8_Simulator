@@ -71,6 +71,7 @@ public class ControlUnit {
             // --- D-Format: Load instructions ---
             case "LDUR", "LDURSW", "LDURH", "LDURB":
                 signalsBuilder
+                        .reg2Loc(true)    // Chọn thanh ghi Rt làm địa chỉ
                         .regWrite(true)   // Ghi dữ liệu từ memory vào thanh ghi
                         .memRead(true)    // Đọc từ memory
                         .memToReg(true)   // Dữ liệu ghi vào thanh ghi đến từ memory
@@ -81,6 +82,7 @@ public class ControlUnit {
             // --- D-Format: Store instructions ---
             case "STUR", "STURW", "STURH", "STURB":
                 signalsBuilder
+                        .reg2Loc(true)    // Chọn thanh ghi Rt làm địa chỉ
                         .memWrite(true)   // Ghi vào memory
                         .aluSrc(true)     // ALU tính địa chỉ (base + offset)
                         .aluOperation(ALUOperation.ADD);
