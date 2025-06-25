@@ -95,7 +95,7 @@ public class Assembler {
             // Xử lí lệnh HALT
             if (lines.get(i).trim().equalsIgnoreCase("HALT")) {
                 System.out.println("HALT instruction found at line " + (i + 1));
-                machineCodeList.add(0x00000000); // Mã máy cho HALT
+                machineCodeList.add(0xFFFFFFFF); // Mã máy cho HALT
                 continue; // Bỏ qua dòng này, không cần xử lý thêm
             }
 
@@ -166,12 +166,15 @@ public class Assembler {
                 int[] dAddress = parseDAddress(operands[1]);
                 int rn_d = dAddress[0];
                 int offset = dAddress[1];
+                System.out.println("------->" + dAddress[0] + " " + dAddress[1] + " " + rd_d);
                 // Kiểm tra giới hạn của offset (giả sử -4096 đến 4095)
                 if (offset < -4096 || offset > 4095) {
                     throw new AssemblyException("Offset out of range: " + offset);
                 }
-                System.out.println("Check D Format: rd=" + rd_d + ", rn=" + rn_d + ", offset=" + offset + ", opcode=" + BitUtils.toBinaryString32(opcode) + ", MNEMONIC=" + mnemonic);
-                return (opcode << 21) | ((offset & 0xFFF) << 10) | (rn_d << 5) | rd_d;
+                System.out.println(Integer.toBinaryString( (opcode << 21) | ((offset & 0xFFF) << 12) | (0 << 10) | (rn_d << 5) | rd_d));
+                System.out.println(BitUtils.toBinaryString((opcode << 21) | ((offset & 0xFFF) << 12) | (0 << 10) | (rn_d << 5) | rd_d,12,21 ));
+                System.out.println("Offset: " + BitUtils.extractBits((opcode << 21) | ((offset & 0xFFF) << 12) | (0 << 10) | (rn_d << 5) | rd_d, 12, 21));
+                return (opcode << 21) | ((offset & 0xFFF) << 12) | (0 << 10) | (rn_d << 5) | rd_d;
             case B_FORMAT:
                 checkOperands(pInstr, 2);
                 int rn_b = parseRegister(operands[0]);
@@ -231,6 +234,10 @@ public class Assembler {
         if (m.group(2) != null) { // XZR
             return 31;
         }
+        // thay doi XZR thanh X31 
+        if (operand.trim().equalsIgnoreCase("XZR")) {
+            operand = "X31";
+        }
         return Integer.parseInt(m.group(1));
     }
 
@@ -254,7 +261,10 @@ public class Assembler {
     }
 
     private int[] parseDAddress(String operand) throws AssemblyException {
+        operand = operand.replaceAll("XZR", "X31"); // Loại bỏ khoảng trắng
+
         Matcher m = D_ADDRESS_PATTERN.matcher(operand.trim());
+        System.out.println("Operand: " + operand.trim());
         if (!m.matches()) {
             throw new AssemblyException("Invalid D-format address operand: '" + operand + "'");
         }

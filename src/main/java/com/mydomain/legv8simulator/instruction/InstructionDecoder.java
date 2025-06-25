@@ -149,7 +149,7 @@ public class InstructionDecoder {
 
     private IFormatInstruction decodeIFormat(int mc, OpcodeInfo info) {
         int opcode = BitUtils.extractBits(mc, 22, 31);
-        int immediate = BitUtils.extractBits(mc, 10, 20);
+        int immediate = BitUtils.extractBits(mc, 10, 21);
         int rn = BitUtils.extractBits(mc, 5, 9);
         int rd = BitUtils.extractBits(mc, 0, 4);
         return new IFormatInstruction(mc, info.mnemonic, opcode, BitUtils.signExtend32(immediate, 12), rn, rd);

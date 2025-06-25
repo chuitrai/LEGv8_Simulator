@@ -1,5 +1,6 @@
-ADD X1, XZR, XZR      
-LOOP: ADDI X1, X1, #1     
-SUBI  X2, X1, #10    
-CBNZ X2, LOOP         
+ADDI X1, X31, #50
+ADDI X2, X31, #10
+SUB  X3, X1, X2
+STUR X3, [XZR , #100]
+LDUR X5, [XZR , #100]
 HALT

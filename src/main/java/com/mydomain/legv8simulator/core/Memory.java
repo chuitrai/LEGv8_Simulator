@@ -119,8 +119,44 @@ public class Memory {
         data[(int) address + 7] = (byte) ((value >> 56) & 0xFF);
     }
 
-    // --- Tiện ích dump (giữ nguyên) ---
-    public void dump(long startAddress, int numBytes, int bytesPerRow) {
-        // (Code hàm dump của bạn ở đây)
+    /**
+     * In ra một phần của bộ nhớ ra console dưới dạng hexa và ASCII.
+     * Rất hữu ích để kiểm tra trực quan một vùng dữ liệu.
+     * @param startAddress Địa chỉ bắt đầu.
+     * @param numBytes Số byte cần in.
+     */
+    public void dump(long startAddress, int numBytes) {
+        int bytesPerRow = 16; // Mặc định in 16 byte mỗi hàng
+        if (startAddress < 0 || numBytes <= 0) {
+            System.out.println("Invalid dump parameters.");
+            return;
+        }
+
+        System.out.println("\n--- Memory Dump (from 0x" + Long.toHexString(startAddress) + ", " + numBytes + " bytes) ---");
+        for (long addr = startAddress; addr < startAddress + numBytes; ) {
+            System.out.printf("0x%08X: ", addr); // In địa chỉ
+
+            // In giá trị Hexa
+            for (int i = 0; i < bytesPerRow; i++) {
+                if (addr + i < startAddress + numBytes && addr + i < size) {
+                    System.out.printf("%02X ", data[(int) (addr + i)]);
+                } else {
+                    System.out.print("   ");
+                }
+            }
+            System.out.print(" | ");
+
+            // In giá trị ASCII
+            for (int i = 0; i < bytesPerRow; i++) {
+                if (addr + i < startAddress + numBytes && addr + i < size) {
+                    byte b = data[(int) (addr + i)];
+                    char c = (b >= 32 && b < 127) ? (char) b : '.';
+                    System.out.print(c);
+                }
+            }
+            System.out.println();
+            addr += bytesPerRow;
+        }
+        System.out.println("---------------------------------------------------------");
     }
 }

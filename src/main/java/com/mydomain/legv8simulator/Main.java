@@ -2,6 +2,7 @@ package main.java.com.mydomain.legv8simulator;
 
 import main.java.com.mydomain.legv8simulator.core.CPU;
 import main.java.com.mydomain.legv8simulator.core.Memory;
+import main.java.com.mydomain.legv8simulator.simulator.Simulator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -30,7 +31,7 @@ public class Main {
             
             // Nạp và chạy
             simulator.loadProgram(0x00, machineCode);
-            simulator.run(50);
+            simulator.run(5);
 
         } catch (AssemblyException e) {
             System.err.println("Assembly Failed: " + e.getMessage());
