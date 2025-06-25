@@ -14,6 +14,122 @@ public class LEGv8Datapath extends Pane {
     private Canvas canvas;
     private GraphicsContext gc;
 
+    private static double width;
+    private static double height;
+
+    // Trong class LEGv8Datapath
+
+// --- Biến toàn cục cho layout ---
+private double C1_PC_IM, C2_CONTROL, C3_REGISTERS, C4_ALU, C5_DATAMEM, C6_MUX;
+private double R_BRANCH_LOGIC, R_CONTROL, R_MAIN_PATH, R_SIGN_EXTEND;
+private double rectWidth, rectHeight, aluWidth, aluHeight, pcWidth, pcHeight, ellipseWidth, ellipseHeight;
+private double pcRectX, pcRectY, instrMemX, instrMemY, regX, regY, aluX, aluY, dataMemX, dataMemY;
+private double add4X, add4Y, shiftLeft2X, shiftLeft2Y, addBranchX, addBranchY;
+private double controlX, controlY, signExtendX, signExtendY, aluControlX, aluControlY;
+private double flagSize, flagX, flagY;
+private double muxRegInputX, muxRegInputY, muxAluInputX, muxAluInputY, muxPcSourceX, muxPcSourceY, muxMemToRegX, muxMemToRegY;
+private double pcRectWidth, pcRectHeight, instrMemWidth, instrMemHeight, regWidth, regHeight, aluBlockWidth, aluBlockHeight;
+private double dataMemWidth, dataMemHeight, add4Width, add4Height, shiftLeft2Width, shiftLeft2Height, addBranchWidth, addBranchHeight;
+private double controlWidth, controlHeight, signExtendWidth, signExtendHeight, aluControlWidth, aluControlHeight, flagBoxSize;
+private double muxWidth, muxHeight;
+
+// Hàm cập nhật giá trị các biến layout
+public void updateLayoutVars(double width, double height) {
+    // Các cột X
+    C1_PC_IM     = width * 0.08;
+    C2_CONTROL   = width * 0.4;
+    C3_REGISTERS = width * 0.45;
+    C4_ALU       = width * 0.64;
+    C5_DATAMEM   = width * 0.81;
+    C6_MUX       = width * 0.925;
+
+    // Các hàng Y
+    R_BRANCH_LOGIC = height * 0.18;
+    R_CONTROL      = height * 0.35;
+    R_MAIN_PATH    = height * 0.55;
+    R_SIGN_EXTEND  = height * 0.8;
+
+    // Kích thước các khối
+    rectWidth     = width * 0.1;
+    rectHeight    = height * 0.2;
+    aluWidth      = width * 0.085;
+    aluHeight     = height * 0.2;
+    pcWidth       = width * 0.035;
+    pcHeight      = height * 0.09;
+    ellipseWidth  = width * 0.05;
+    ellipseHeight = height * 0.07;
+
+    // Vị trí các khối chính
+    pcRectX = C1_PC_IM;
+    pcRectY = R_MAIN_PATH - pcHeight / 2;
+    instrMemX = C1_PC_IM + width * 0.08;
+    instrMemY = R_MAIN_PATH - 0.02 * height;
+    regX = C3_REGISTERS;
+    regY = R_MAIN_PATH - height * 0.01;
+    aluX = C4_ALU;
+    aluY = R_MAIN_PATH - aluHeight * 0.05;
+    dataMemX = C5_DATAMEM;
+    dataMemY = R_MAIN_PATH + 0.4 * aluHeight;
+
+    // Vị trí khối logic trên cùng
+    add4X = C1_PC_IM + width * 0.13;
+    add4Y = R_BRANCH_LOGIC - pcHeight;
+    shiftLeft2X = C3_REGISTERS + 0.15 * width;
+    shiftLeft2Y = R_BRANCH_LOGIC * 1.1;
+    addBranchX = C3_REGISTERS + width * 0.25;
+    addBranchY = R_BRANCH_LOGIC - pcHeight * 0.4;
+
+    // Vị trí khối điều khiển và mở rộng
+    controlX = C2_CONTROL;
+    controlY = R_CONTROL - 0.1 * height;
+    signExtendX = C3_REGISTERS + width * 0.02;
+    signExtendY = R_SIGN_EXTEND;
+    aluControlX = C4_ALU - width * 0.025;
+    aluControlY = R_SIGN_EXTEND * 1.02;
+
+    // Flag
+    flagSize = width * 0.018;
+    flagX = C4_ALU + 0.05 * aluWidth;
+    flagY = R_MAIN_PATH - aluHeight * 0.05 - flagSize - height * 0.01;
+
+    // Vị trí MUX
+    muxRegInputX = C2_CONTROL - 0.02 * width;
+    muxRegInputY = R_MAIN_PATH + 0.03 * height;
+    muxAluInputX = C4_ALU - 0.04 * width;
+    muxAluInputY = R_MAIN_PATH + 0.11 * height;
+    muxPcSourceX = C6_MUX - 0.02 * width;
+    muxPcSourceY = R_BRANCH_LOGIC - 0.065 * height;
+    muxMemToRegX = C6_MUX;
+    muxMemToRegY = R_MAIN_PATH + 0.6 * aluHeight;
+
+    // Kích thước các khối cụ thể
+    pcRectWidth = pcWidth;
+    pcRectHeight = pcHeight;
+    instrMemWidth = rectWidth;
+    instrMemHeight = rectHeight;
+    regWidth = rectWidth;
+    regHeight = rectHeight * 1.16;
+    aluBlockWidth = aluWidth;
+    aluBlockHeight = aluHeight;
+    dataMemWidth = rectWidth * 0.9;
+    dataMemHeight = rectHeight * 0.9;
+    add4Width = pcWidth;
+    add4Height = pcHeight * 0.8;
+    shiftLeft2Width = ellipseWidth;
+    shiftLeft2Height = ellipseHeight;
+    addBranchWidth = pcWidth * 1.5;
+    addBranchHeight = pcHeight * 1.2;
+    controlWidth = ellipseWidth * 1.2;
+    controlHeight = ellipseHeight * 4;
+    signExtendWidth = ellipseWidth;
+    signExtendHeight = ellipseHeight;
+    aluControlWidth = ellipseWidth;
+    aluControlHeight = ellipseHeight;
+    flagBoxSize = flagSize;
+    muxWidth = 0.02 * width;
+    muxHeight = 0.09 * height;
+}
+
     public LEGv8Datapath() {
     canvas = new Canvas(); 
     gc = canvas.getGraphicsContext2D();
@@ -28,13 +144,13 @@ public class LEGv8Datapath extends Pane {
     // Điều này đảm bảo sơ đồ luôn được cập nhật.
     canvas.widthProperty().addListener(evt -> draw());
     canvas.heightProperty().addListener(evt -> draw());
-}
+    }
 
     public void draw() {
     // Lấy kích thước hiện tại của canvas
 
-    double width = getWidth();
-    double height = getHeight();
+    width = getWidth();
+    height = getHeight();
 
     // Nếu canvas chưa có kích thước thì không vẽ gì cả
     if (width == 0 || height == 0) {
@@ -47,151 +163,29 @@ public class LEGv8Datapath extends Pane {
     gc.setFill(Color.WHITE);
     gc.fillRect(0, 0, width, height);
 
-    // --- HỆ LƯỚI TỌA ĐỘ TƯƠNG ĐỐI (DỰA TRÊN TỶ LỆ) ---
-    // Các cột X được tính bằng phần trăm của chiều rộng
-    final double C1_PC_IM = width * 0.08;
-    final double C2_CONTROL = width * 0.4;
-    final double C3_REGISTERS = width * 0.45;
-    final double C4_ALU = width * 0.64;
-    final double C5_DATAMEM = width * 0.81;
-    final double C6_MUX = width * 0.925;
+    updateLayoutVars(width, height);
 
-    // Các hàng Y được tính bằng phần trăm của chiều cao
-    final double R_BRANCH_LOGIC = height * 0.18;
-    final double R_CONTROL = height * 0.35;
-    final double R_MAIN_PATH = height * 0.55;
-    final double R_SIGN_EXTEND = height * 0.8;
-
-    // Kích thước các khối được tính theo tỷ lệ
-    double rectWidth = width * 0.1;
-    double rectHeight = height * 0.2;
-    double aluWidth = width * 0.085;
-    double aluHeight = height * 0.2;
-    double pcWidth = width * 0.035;
-    double pcHeight = height * 0.09;
-    double ellipseWidth = width * 0.05;
-    double ellipseHeight = height * 0.07;
-
-    // Vị trí các khối được tính toán dựa trên kích thước và tỷ lệ
-
-    
+        
     // Kích thước font chữ co giãn
     int baseFontSize = (int) (width / 90); // 90 là một hằng số tỷ lệ có thể điều chỉnh
     if (baseFontSize < 8) baseFontSize = 8; // Đặt kích thước tối thiểu
 
-    // ===================================
-    // BƯỚC 1: VẼ CÁC KHỐI CHÍNH VÀ PHỤ
-    // ===================================
-    // --- Khối trên dòng chính ---
-        // --- VỊ TRÍ CÁC KHỐI CHÍNH ---
-        double pcRectX = C1_PC_IM;
-        double pcRectY = R_MAIN_PATH - pcHeight / 2;
-
-        double instrMemX = C1_PC_IM + width * 0.08;
-        double instrMemY = R_MAIN_PATH - 0.02 * height;
-
-        double regX = C3_REGISTERS;
-        double regY = R_MAIN_PATH - height * 0.01;
-
-        double aluX = C4_ALU;
-        double aluY = R_MAIN_PATH - aluHeight * 0.05;
-
-        double dataMemX = C5_DATAMEM;
-        double dataMemY = R_MAIN_PATH + 0.4 * aluHeight;
-
-        // --- VỊ TRÍ KHỐI LOGIC TRÊN CÙNG ---
-        double add4X = C1_PC_IM + width * 0.13;
-        double add4Y = R_BRANCH_LOGIC - pcHeight;
-
-        double shiftLeft2X = C3_REGISTERS + 0.15 * width;
-        double shiftLeft2Y = R_BRANCH_LOGIC * 1.1;
-
-        double addBranchX = C3_REGISTERS + width * 0.25;
-        double addBranchY = R_BRANCH_LOGIC - pcHeight * 0.4;
-
-        // --- VỊ TRÍ KHỐI ĐIỀU KHIỂN VÀ MỞ RỘNG ---
-        double controlX = C2_CONTROL;
-        double controlY = R_CONTROL - 0.1 * height;
-
-        double signExtendX = C3_REGISTERS + width * 0.02;
-        double signExtendY = R_SIGN_EXTEND;
-
-        double aluControlX = C4_ALU - width * 0.025;
-        double aluControlY = R_SIGN_EXTEND * 1.02;
-
-        double flagSize = width * 0.018;
-        double flagX = C4_ALU + 0.05 * aluWidth;
-        double flagY = R_MAIN_PATH - aluHeight * 0.05 - flagSize - height * 0.01;
-
-        // --- VỊ TRÍ MUX ---
-        double muxRegInputX = C2_CONTROL - 0.02 * width;
-        double muxRegInputY = R_MAIN_PATH + 0.03 * height;
-
-        double muxAluInputX = C4_ALU - 0.04 * width;
-        double muxAluInputY = R_MAIN_PATH + 0.11 * height;
-
-        double muxPcSourceX = C6_MUX - 0.02 * width;
-        double muxPcSourceY = R_BRANCH_LOGIC - 0.065 * height;
-
-        double muxMemToRegX = C6_MUX;
-        double muxMemToRegY = R_MAIN_PATH + 0.6 * aluHeight;
-
-        // --- KHAI BÁO KÍCH THƯỚC CÁC KHỐI ---
-        // Program Counter
-        double pcRectWidth = pcWidth;
-        double pcRectHeight = pcHeight;
-        // Instruction Memory
-        double instrMemWidth = rectWidth;
-        double instrMemHeight = rectHeight;
-        // Registers
-        double regWidth = rectWidth;
-        double regHeight = rectHeight * 1.16;
-        // ALU
-        double aluBlockWidth = aluWidth;
-        double aluBlockHeight = aluHeight;
-        // Data Memory
-        double dataMemWidth = rectWidth * 0.9;
-        double dataMemHeight = rectHeight * 0.9;
-        // Add 4
-        double add4Width = pcWidth;
-        double add4Height = pcHeight * 0.8;
-        // Shift left 2
-        double shiftLeft2Width = ellipseWidth;
-        double shiftLeft2Height = ellipseHeight;
-        // Add Branch
-        double addBranchWidth = pcWidth * 1.5;
-        double addBranchHeight = pcHeight * 1.2;
-        // Control
-        double controlWidth = ellipseWidth * 1.2;
-        double controlHeight = ellipseHeight * 4;
-        // Sign-extend
-        double signExtendWidth = ellipseWidth;
-        double signExtendHeight = ellipseHeight;
-        // ALU Control
-        double aluControlWidth = ellipseWidth;
-        double aluControlHeight = ellipseHeight;
-        // Flag Box
-        double flagBoxSize = flagSize;
-        // MUX
-        double muxWidth = 0.02 * width;
-        double muxHeight = 0.09 * height;
-
         // --- VẼ CÁC KHỐI ---
-        drawCompRect(gc, pcRectX, pcRectY, pcRectWidth, pcRectHeight, Color.BLACK, Color.web("#ffe3e3")); // Program Counter
-        drawCompRect(gc, instrMemX, instrMemY, instrMemWidth, instrMemHeight, Color.BLACK, Color.web("#e3f6e3")); // Instruction Memory
-        drawCompRect(gc, regX, regY, regWidth, regHeight, Color.BLACK, Color.web("#ffe3ec")); // Registers
-        drawALU(gc, aluX, aluY, aluBlockWidth, aluBlockHeight, Color.BLACK, Color.web("#f3e5f5"), false); // ALU
-        drawCompRect(gc, dataMemX, dataMemY, dataMemWidth, dataMemHeight, Color.BLACK, Color.web("#fde2e2")); // Data Memory
+        drawCompRect(gc, pcRectX, pcRectY, pcRectWidth, pcRectHeight, pcBorderColor, pcFillColor, true); // Program Counter
+        drawCompRect(gc, instrMemX, instrMemY, instrMemWidth, instrMemHeight, instrMemBorderColor, instrMemFillColor); // Instruction Memory
+        drawCompRect(gc, regX, regY, regWidth, regHeight, regBorderColor, regFillColor); // Registers
+        drawALU(gc, aluX, aluY, aluBlockWidth, aluBlockHeight, aluBorderColor, aluFillColor, false); // ALU
+        drawCompRect(gc, dataMemX, dataMemY, dataMemWidth, dataMemHeight, dataMemBorderColor, dataMemFillColor); // Data Memory
 
         // --- Khối logic trên cùng ---
-        drawALU(gc, add4X, add4Y, add4Width, add4Height, Color.web("#1C2B2B"), Color.web("#f0f4f8"), false); // Add 4
-        drawEllipse(gc, shiftLeft2X, shiftLeft2Y, shiftLeft2Width, shiftLeft2Height, Color.web("#1C2B2B"), Color.web("#f9f9f9")); // Shift left 2
-        drawALU(gc, addBranchX, addBranchY, addBranchWidth, addBranchHeight, Color.web("#1C2B2B"), Color.web("#f0f4f8"), false); // Add Branch
+        drawALU(gc, add4X, add4Y, add4Width, add4Height, add4BorderColor, add4FillColor, false); // Add 4
+        drawCompEllipse(gc, shiftLeft2X, shiftLeft2Y, shiftLeft2Width, shiftLeft2Height, shiftLeft2BorderColor, shiftLeft2FillColor, true); // Shift left 2
+        drawALU(gc, addBranchX, addBranchY, addBranchWidth, addBranchHeight, addBranchBorderColor, addBranchFillColor, false); // Add Branch
 
         // --- Khối điều khiển và mở rộng ---
-        drawCompEllipse(gc, controlX, controlY, controlWidth, controlHeight, Color.web("#12C0E8"), Color.web("#E1F5FE"), false); // Control
-        drawCompEllipse(gc, signExtendX, signExtendY, signExtendWidth, signExtendHeight, Color.web("#1C2B2B"), Color.web("#f0f4f8"), false); // Sign-extend
-        drawCompEllipse(gc, aluControlX, aluControlY, aluControlWidth, aluControlHeight, Color.web("#12C0E8"), Color.web("#E1F5FE"), false); // ALU Control
+        drawCompEllipse(gc, controlX, controlY, controlWidth, controlHeight, controlBorderColor, controlFillColor, false); // Control
+        drawCompEllipse(gc, signExtendX, signExtendY, signExtendWidth, signExtendHeight, signExtendBorderColor, signExtendFillColor, false); // Sign-extend
+        drawCompEllipse(gc, aluControlX, aluControlY, aluControlWidth, aluControlHeight, aluControlBorderColor, aluControlFillColor, false); // ALU Control
 
         drawFlagBox(gc, "N", flagX, flagY, flagBoxSize, baseFontSize - 2);
         drawFlagBox(gc, "Z", flagX + flagBoxSize, flagY, flagBoxSize, baseFontSize - 2);
@@ -199,10 +193,10 @@ public class LEGv8Datapath extends Pane {
         drawFlagBox(gc, "V", flagX + 3 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2);
 
         // --- VẼ CÁC BỘ MUX ---
-        drawMux(gc, muxRegInputX, muxRegInputY, muxWidth, muxHeight, Color.web("#1C2B2B"), Color.web("#E6E6FA"), false); // MUX Register Input
-        drawMux(gc, muxAluInputX, muxAluInputY, muxWidth, muxHeight, Color.web("#1C2B2B"), Color.web("#E6E6FA"), false); // MUX ALU Input
-        drawMux(gc, muxPcSourceX, muxPcSourceY, muxWidth, muxHeight, Color.web("#1C2B2B"), Color.web("#E6E6FA"), false); // MUX PC Source
-        drawMux(gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, Color.web("#1C2B2B"), Color.web("#E6E6FA"), false); // MUX MemToReg
+        drawMux(gc, muxRegInputX, muxRegInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, true); // MUX Register Input
+        drawMux(gc, muxAluInputX, muxAluInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX ALU Input
+        drawMux(gc, muxPcSourceX, muxPcSourceY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX PC Source
+        drawMux(gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX MemToReg
 
         // // ===================================
         // // 3. VẼ CÁC CỔNG LOGIC
@@ -227,175 +221,52 @@ public class LEGv8Datapath extends Pane {
         // // ===================================
         // // 4. VẼ CÁC ĐƯỜNG DÂY DỮ LIỆU (DATA PATH - BLACK)
         // // ===================================
-        // // PC -> Add
-        drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC*0.6, R_MAIN_PATH, BLACK, false, true); // PC to Add 4
-        drawRightArrow(gc, C1_PC_IM + pcWidth*1.5, R_BRANCH_LOGIC*0.6, C1_PC_IM + width*0.13, BLACK, false); // PC to Add 4
-        drawRightArrow(gc, C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.85, C1_PC_IM + width*0.13, BLACK, false); // Add 4
-        drawRightArrow(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, C1_PC_IM, BLACK, false); // To PC
-        drawVerticalSegment(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, R_BRANCH_LOGIC*0.3,  BLACK, false, false); 
-        drawHorizontalSegment(gc, C1_PC_IM - pcWidth*0.5, R_BRANCH_LOGIC*0.3, C6_MUX + 0.04*width, BLACK, false, false);
-        drawVerticalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.3, R_BRANCH_LOGIC*0.9, BLACK, false, false); // MUX to PC
-        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, BLACK, false); // Add 4 to MUX
-        drawHorizontalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.9, C6_MUX, BLACK, false, false); // MUX to PC
-        drawRightArrow(gc, C3_REGISTERS + width*0.25 + pcWidth*1.5, R_BRANCH_LOGIC*1.1, C6_MUX - 0.02*width, BLACK, false); // Add Branch to MUX
-        
-        drawRightArrow(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, instrMemX, BLACK, false); // PC to Instruction Memory
+        drawPCToAdd4(gc, width, height, false);
+        drawPCToInstructionMemory(gc, width, height, false);
+        drawPCToAddBranch(gc, width, height, false);
+        drawAdd4ToMux(gc, width, height, false);
+        drawMuxToPC(gc, width, height, false);
+        drawAddBranchToMUX(gc, width, height, false);
+        drawAdd4(gc, width, height, false);
+        drawInstrToControl(gc, width, height, false);
+        drawShiftLeftToAddBranch(gc, width, height, false);
+        drawInstrToSignExtend(gc, width, height, false);
+        drawInstrToRegRead1(gc, width, height, false);
+        drawInstrToMuxReg0(gc, width, height, false);
+        drawInstrToMuxReg1(gc, width, height, false);
+        drawInstrToRegWrite(gc, width, height, false);
+        drawMUXRegToRegRead2(gc, width, height, false);
+        drawInstrToALUControl(gc, width, height, false);
+        drawSignExtendToShiftLeft(gc, width, height, false);
+        drawSignExtendToMuxALU(gc, width, height, false);
+        drawRegistersToMuxALU(gc, width, height, false);
+        drawRegistersToDataMemory(gc, width, height, false);
+        drawRegistersToALU(gc, width, height, false);
+        drawMuxALUToALU(gc, width, height, false);
+        drawALUToDataMemory(gc, width, height, false);
+        drawALUToFlags(gc, width, height, false);
+        drawALUToMuxMemToReg(gc, width, height, false);
+        drawDataMemoryToMuxMemToReg(gc, width, height, false);
+        drawMuxMemToRegToRegisters(gc, width, height, false);
 
-        // Shift Left 2 -> Add Branch
-        drawRightArrow(gc, C3_REGISTERS + width*0.15 + ellipseWidth, R_BRANCH_LOGIC*1.3, C3_REGISTERS + width*0.25, BLACK, false); // Shift Left 2 to Add Branch
-        // PC -> Add Shift
-        drawHorizontalSegment(gc, C1_PC_IM + pcWidth*1.5, controlY, add4X + add4Width*2.5, BLACK, true, isCache());
-        drawVerticalSegment(gc, add4X + add4Width*2.5, controlY, addBranchY + 0.25*addBranchHeight, BLACK, isDisable(), isCache());
-        drawRightArrow(gc, add4X + add4Width*2.5, addBranchY + 0.25*addBranchHeight, addBranchX, BLACK, false); // PC to Shift Left 2
-
-        // Instruction Memory -> Control
-        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, BLACK, false,true); 
-        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_SIGN_EXTEND + 0.5*ellipseHeight, controlY + 0.5 *controlHeight, BLACK, false, false); 
-        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, controlY + 0.5 *controlHeight, C2_CONTROL, BLACK, false); // Instruction Memory to Control
-
-        // Instruction Memory -> Sign Extend
-        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_SIGN_EXTEND + 0.5*ellipseHeight, signExtendX, BLACK, false); // Instruction Memory to Sign Extend
-
-        // Instruction Memory -> Registers
-        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, muxRegInputY + 0.15 * muxHeight, C2_CONTROL - 0.02*width, BLACK, true); // Instruction Memory to MUX Register Input
-        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.1 * regHeight, C3_REGISTERS, BLACK, true); // Instruction Memory to Registers
-        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 *regHeight, C3_REGISTERS, BLACK, true); // Instruction Memory to Sign Extend
-        drawRightArrow(gc, C2_CONTROL, R_MAIN_PATH + 0.075 * height, C3_REGISTERS, BLACK, false); // MUX Register Input to Registers
-        drawRightArrow(gc, C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight, muxRegInputX , BLACK, false); // Instruction Memory to MUX Register Input
-        drawVerticalSegment(gc, C2_CONTROL - 0.05*width, regY + 0.7 *regHeight, muxRegInputY + 0.8*muxHeight, BLACK, true, false); // MUX Register Input to Sign Extend
-        
-        // Registers -> MUX ALU Input
-        drawRightArrow(gc, C3_REGISTERS + rectWidth, muxAluInputY + 0.3*muxHeight, muxAluInputX, BLACK, false); // Registers to MUX ALU Input
-
-        // Registers -> Data Memory
-        drawVerticalSegment(gc, regX + rectWidth*1.1 , muxAluInputY + 0.3*muxHeight, dataMemY + 0.8*dataMemHeight, BLACK, true, false); // Registers to Data Memory)
-        drawRightArrow(gc, regX + rectWidth*1.1, dataMemY + 0.8*dataMemHeight, dataMemX, BLACK, false); // Registers to Data Memory
-
-        // Registers -> ALU
-        drawRightArrow(gc, C3_REGISTERS + rectWidth, R_MAIN_PATH + 0.025 * height, C4_ALU, BLACK, false); // Registers to ALU
-
-        // MUX ALU Input -> ALU
-        drawRightArrow(gc, muxAluInputX + muxWidth, muxAluInputY + 0.5*muxHeight, aluX, BLACK, false); // MUX ALU Input to ALU
-
-        // Instruction Memory -> ALU Control
-        drawVerticalSegment(gc, signExtendX - 0.7*signExtendWidth, R_SIGN_EXTEND + 0.5*ellipseHeight, R_SIGN_EXTEND + 1.5*ellipseHeight, BLACK, true, false);
-        drawHorizontalSegment(gc, signExtendX - 0.7*signExtendWidth, R_SIGN_EXTEND + 1.5*ellipseHeight, C4_ALU - width*0.05, BLACK, false, false); // Instruction Memory to ALU Control
-        drawVerticalSegment(gc, C4_ALU - width*0.05, R_SIGN_EXTEND + 1.5*ellipseHeight, R_SIGN_EXTEND + 0.8*ellipseHeight, BLACK, false, false); // ALU Control to Sign Extend
-        drawRightArrow(gc, C4_ALU - width*0.05, R_SIGN_EXTEND + 0.8*ellipseHeight, aluControlX, BLACK, false); // Instruction Memory to ALU Control
-
-        // Sign Extend -> Shift Left 2
-        drawHorizontalSegment(gc, signExtendX + ellipseWidth, signExtendY + 0.5*ellipseHeight, muxAluInputX - muxWidth, BLACK, isDisable(), isCache());
-        drawVerticalSegment(gc,  muxAluInputX - muxWidth, signExtendY + 0.5*ellipseHeight, shiftLeft2Y + 0.5*ellipseHeight, BLACK, isDisable(), isCache());
-        drawRightArrow(gc,  muxAluInputX - muxWidth, shiftLeft2Y + 0.5*ellipseHeight, shiftLeft2X, BLACK, false); // Sign Extend to Shift Left 2
-
-        drawRightArrow(gc, muxAluInputX - muxWidth, muxAluInputY + 0.75*muxHeight, muxAluInputX, BLACK, true); // Sign Extend to ALU Control
-
-        // ALU -> Data Memory
-        drawRightArrow(gc, C4_ALU + aluWidth, aluY + 0.6*aluHeight, dataMemX, BLACK, false); // ALU to Data Memory
-
-        // ALU -> Flags
-        drawUpArrow(gc, aluX + 0.48*aluWidth, aluY + 0.12*aluHeight, flagY + flagBoxSize, BLACK, isCache());
-
-        // ALU -> MUX MemToReg
-        drawVerticalSegment(gc, dataMemX - 0.25*dataMemWidth, aluY + 0.6*aluHeight, dataMemY + dataMemHeight * 1.2, BLACK, true, isCache());
-        drawHorizontalSegment(gc, dataMemX - 0.25*dataMemWidth, dataMemY + dataMemHeight * 1.2, muxMemToRegX - 0.8*muxWidth, BLACK, false, false); // ALU to MUX MemToReg
-        drawVerticalSegment(gc, muxMemToRegX - 0.8*muxWidth, dataMemY + dataMemHeight * 1.2, muxMemToRegY + 0.8*muxHeight, BLACK, isDisable(), isCache());
-        drawRightArrow(gc, muxMemToRegX - 0.8*muxWidth, muxMemToRegY + 0.8*muxHeight, muxMemToRegX, BLACK, false); // ALU to MUX MemToReg
-
-        // Data Memory -> MUX MemToReg
-        drawRightArrow(gc, dataMemX + dataMemWidth, muxMemToRegY + 0.2*muxHeight, muxMemToRegX, BLACK, false); // Data Memory to MUX MemToReg
-
-        // MUX MemToReg -> Registers
-        drawHorizontalSegment(gc, muxMemToRegX + muxWidth, muxMemToRegY + 0.5*muxHeight,  muxMemToRegX + muxWidth*1.8, BLACK, false, false); // MUX MemToReg to Registers
-        drawVerticalSegment(gc, muxMemToRegX + muxWidth*1.8, muxMemToRegY + 0.5*muxHeight, aluControlY +aluControlHeight*2, BLACK, false, false); // MUX MemToReg to Registers
-        drawHorizontalSegment(gc, muxMemToRegX + muxWidth*1.8, aluControlY + aluControlHeight*2, regX - 0.3*rectWidth, BLACK, false, false); // MUX MemToReg to Registers
-        drawVerticalSegment(gc, regX - rectWidth*0.3, aluControlY + aluControlHeight*2, regY + 0.9*regHeight, BLACK, false, false); // MUX MemToReg to Registers
-        drawRightArrow(gc, regX - rectWidth*0.3, regY + 0.9*regHeight, regX, BLACK, false); // MUX MemToReg to Registers
-
-        // CONTROL SIGNALS
-
-        // Reg2Loc
-        drawHorizontalSegment(gc, controlX + 0.7*controlWidth, controlY + 0.05*controlHeight, controlX + controlWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, controlX + controlWidth, addBranchY + addBranchHeight*0.65, controlY + 0.05*controlHeight, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, controlX + controlWidth, addBranchY + addBranchHeight*0.65, instrMemX + instrMemWidth*1.15, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, instrMemX + instrMemWidth*1.15, addBranchY + addBranchHeight*0.65, muxRegInputY + muxHeight*1.75, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, instrMemX + instrMemWidth*1.15,  muxRegInputY + muxHeight*1.75, muxRegInputX + 0.5*muxWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, muxRegInputX + 0.5*muxWidth, muxRegInputY + muxHeight*1.75, muxRegInputY + muxHeight, ARM_BLUE, isDisable(), isCache());
-
-        // Unconditional Branch
-        drawHorizontalSegment(gc, controlX + 0.85*controlWidth, controlY + 0.14*controlHeight, orGateX + 0.1*gateW, ARM_BLUE, isDisable(), isCache());
-
-        // FlagBranch
-        drawHorizontalSegment(gc, controlX + 0.9*controlWidth, controlY + 0.23*controlHeight, andGate1X - 0.5*gateW, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, andGate1X - 0.5*gateW, andGateY + 0.2*gateH, controlY + 0.23*controlHeight, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, andGate1X - 0.5*gateW, andGateY + 0.2*gateH, andGate1X, ARM_BLUE, isDisable(), isCache());
-
-        // ZeroBranch
-        drawHorizontalSegment(gc, controlX + 0.95*controlWidth, controlY + 0.32*controlHeight, andGate2X - 0.7*gateW, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.2*gateH, controlY + 0.32*controlHeight, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.2*gateH, andGate2X, ARM_BLUE, isDisable(), isCache());
-
-        // MemRead
-        drawHorizontalSegment(gc, controlX + 0.97*controlWidth, controlY + 0.41*controlHeight, muxMemToRegX + 2.5*muxWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, muxMemToRegX + 2.5*muxWidth, controlY + 0.41*controlHeight, dataMemY + 1.4*dataMemHeight, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, muxMemToRegX + 2.5*muxWidth, dataMemY + 1.4*dataMemHeight, dataMemX + dataMemWidth*0.5, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, dataMemX + dataMemWidth*0.5, dataMemY + 1.4*dataMemHeight, dataMemY + dataMemHeight, ARM_BLUE, isDisable(), isCache());
-
-        // MemToReg
-        drawHorizontalSegment(gc, controlX + 0.99*controlWidth, controlY + 0.5*controlHeight, muxMemToRegX + 0.5*muxWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, muxMemToRegX + 0.5*muxWidth, controlY + 0.5*controlHeight, muxMemToRegY, ARM_BLUE, isDisable(), isCache());
-
-        // MemWrite
-        drawHorizontalSegment(gc, controlX + 0.97*controlWidth, controlY + 0.59*controlHeight, dataMemX + dataMemWidth*0.5, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, dataMemX + dataMemWidth*0.5, controlY + 0.59*controlHeight, dataMemY, ARM_BLUE, isDisable(), isCache());
-
-        // FlagWrite
-        drawHorizontalSegment(gc, controlX + 0.98*controlWidth, controlY + 0.68*controlHeight, aluX + 0.48*aluWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, aluX + 0.48*aluWidth, controlY + 0.68*controlHeight, flagY, ARM_BLUE, isDisable(), isCache());
-
-        // ALUSrc
-        drawHorizontalSegment(gc, controlX + 0.93*controlWidth, controlY + 0.77*controlHeight, muxAluInputX + 0.5*muxWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, muxAluInputX + 0.5*muxWidth, controlY + 0.77*controlHeight, muxAluInputY, ARM_BLUE, isDisable(), isCache());
-
-        // ALUOp
-        drawHorizontalSegment(gc, controlX + 0.83*controlWidth, controlY + 0.86*controlHeight, muxAluInputX - 1.5*muxWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, muxAluInputX - 1.5*muxWidth, controlY + 0.86*controlHeight, aluControlY + 1.7 * aluControlHeight, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, muxAluInputX - 1.5*muxWidth, aluControlY + 1.7 * aluControlHeight, aluControlX + aluControlHeight*0.5, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, aluControlX + aluControlHeight*0.5, aluControlY + 1.7 * aluControlHeight, aluControlY + aluControlHeight, ARM_BLUE, isDisable(), isCache());
-
-        // RegWrite
-        drawHorizontalSegment(gc, controlX + 0.7*controlWidth, controlY + 0.95*controlHeight, regX + 0.5 *rectWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, regX + 0.5 *rectWidth, controlY + 0.95*controlHeight, regY, ARM_BLUE, isDisable(), isCache());
-
-        // Flag to AND gate
-        drawHorizontalSegment(gc, flagX + 4*flagBoxSize, flagY + 0.5*flagBoxSize, andGate1X , ARM_BLUE, isDisable(), isCache());
-
-        // ALU to ALU Control
-        drawVerticalSegment(gc, aluX + 0.48*aluWidth, aluY + 0.88*aluHeight, aluControlY + aluControlHeight*0.5, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, aluX + 0.48*aluWidth, aluControlY + aluControlHeight*0.5, aluControlX + aluControlWidth, ARM_BLUE, isDisable(), isCache());
-
-        // ALU to AND gate
-        drawHorizontalSegment(gc, aluX + aluWidth, aluY + 0.4 * aluBlockHeight, andGate2X - 0.7*gateW, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, aluY + 0.4 * aluBlockHeight, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, andGate2X, ARM_BLUE, isDisable(), isCache());
-
-        // AND gate 1 to OR gate
-        drawHorizontalSegment(gc, andGate1X + 0.9*gateW, andGateY + 0.5*gateH, andGate2X - 1.2*gateW, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, andGate2X - 1.2*gateW, orGateY + 0.65*gateH, andGateY + 0.5*gateH, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, andGate2X - 1.2*gateW, orGateY + 0.65*gateH, orGateX + 0.2*gateW, ARM_BLUE, isDisable(), isCache());
-
-        // AND gate 2 to OR gate
-        drawHorizontalSegment(gc, andGate2X + 0.95*gateW, andGateY + 0.5*gateH, orGateX - 0.8*gateW, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, orGateX - 0.8*gateW, orGateY + 0.95*gateH, andGateY + 0.5*gateH, ARM_BLUE, isDisable(), isCache());
-        drawHorizontalSegment(gc, orGateX - 0.8*gateW, orGateY + 0.95*gateH, orGateX + 0.1*gateW, ARM_BLUE, isDisable(), isCache());
-
-        // OR gate to MUX
-        drawHorizontalSegment(gc, orGateX + 1.2*gateW, orGateY + 0.6*gateH, muxPcSourceX + 0.5*muxWidth, ARM_BLUE, isDisable(), isCache());
-        drawVerticalSegment(gc, muxPcSourceX + 0.5*muxWidth, orGateY + 0.6*gateH, muxPcSourceY + muxHeight, ARM_BLUE, isDisable(), isCache());
-
-        // =======================================================
-        //  BƯỚC 5: VẼ NHÃN (LABELS)
-        // =======================================================
+        // Control signals
+        drawReg2Loc(gc, false);
+        drawUncondBranch(gc, orGateX, gateW, false);
+        drawFlagBranch(gc, andGate1X, gateW, andGateY, gateH, false);
+        drawZeroBranch(gc, andGate2X, gateW, andGateY, gateH, false);
+        drawMemRead(gc, false);
+        drawMemToReg(gc, false);
+        drawMemWrite(gc, false);
+        drawFlagWrite(gc, false);
+        drawALUSrc(gc, false);
+        drawALUOp(gc, false);
+        drawRegWrite(gc, false);
+        drawFlagToAndGate(gc, andGate1X, false);
+        drawALUToALUControl(gc, false);
+        drawALUToAndGate(gc, andGate2X, gateW, andGateY, gateH, false);
+        drawAnd1ToOrGate(gc, andGate1X, gateW, andGateY, gateH, andGate2X, orGateY, orGateX, false);
+        drawAnd2ToOrGate(gc, andGate2X, gateW, andGateY, gateH, orGateX, orGateY, false);
+        drawOrGateToMux(gc, orGateX, gateW, orGateY, gateH, false);
 
         // --- Nhãn cho các khối chính ---
         drawTextBold(gc, "PC", pcRectX + pcRectWidth / 2, pcRectY + pcRectHeight / 2, BLACK, baseFontSize + 2, TextAlignment.CENTER);
@@ -461,4 +332,287 @@ public class LEGv8Datapath extends Pane {
         drawText(gc, "32", signExtendX - 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.RIGHT);
         drawText(gc, "64", signExtendX + signExtendWidth + 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.LEFT);
     }
+
+    public void drawPCToAdd4(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, add4Y + add4Height*0.25, highlight? Highlight :BLACK, false, false); 
+        drawRightArrow(gc, C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, add4X, highlight? Highlight :BLACK, false); 
+        drawHorizontalSegment(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, highlight ? Highlight :BLACK, false, true);     
+        }
+    public void drawPCToInstructionMemory(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, instrMemX, highlight ? Highlight : BLACK, false); // PC to Instruction Memory
+    }
+
+    public void drawPCToAddBranch(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawHorizontalSegment(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, highlight ? Highlight :BLACK, false, true);     
+        drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, controlY, highlight? Highlight :BLACK, false, true); 
+        drawHorizontalSegment(gc, C1_PC_IM + pcWidth*1.5, controlY, add4X + add4Width*2.5, highlight ? Highlight :BLACK, true, isCache());
+        drawVerticalSegment(gc, add4X + add4Width*2.5, controlY, addBranchY + 0.25*addBranchHeight, highlight ? Highlight :BLACK, isDisable(), isCache());
+        drawRightArrow(gc, add4X + add4Width*2.5, addBranchY + 0.25*addBranchHeight, addBranchX, highlight ? Highlight :BLACK, false); // PC to Shift Left 2
+    }
+    public void drawAdd4ToMux(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, highlight ? Highlight :BLACK, false); // Add 4 to MUX
+    }
+
+    public void drawMuxToPC(GraphicsContext gc, double width, double height, boolean highlight) {
+
+        drawRightArrow(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, C1_PC_IM, highlight ? Highlight :BLACK, false); // To PC
+        drawVerticalSegment(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, R_BRANCH_LOGIC*0.3,  highlight ? Highlight :BLACK, false, false); 
+        drawHorizontalSegment(gc, C1_PC_IM - pcWidth*0.5, R_BRANCH_LOGIC*0.3, C6_MUX + 0.04*width, highlight ? Highlight :BLACK, false, false);
+        drawVerticalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.3, R_BRANCH_LOGIC*0.9, highlight ? Highlight :BLACK, false, false); // MUX to PC
+        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, highlight ? Highlight :BLACK, false); // Add 4 to MUX
+        drawHorizontalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.9, C6_MUX, highlight ? Highlight :BLACK, false, false); // MUX to PC
+    }
+
+    public void drawAddBranchToMUX(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, C3_REGISTERS + width*0.25 + pcWidth*1.5, R_BRANCH_LOGIC*1.1, C6_MUX - 0.02*width, highlight ? Highlight :BLACK, false); // Add Branch to MUX
+    }
+
+    public void drawAdd4(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.85, C1_PC_IM + width*0.13, highlight ? Highlight : BLACK, false); // Add 4
+    }
+
+    public void drawInstrToControl(GraphicsContext gc, double width, double height, boolean highlight) {
+
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, controlY + 0.5 *controlHeight, highlight ? Highlight :BLACK, true, false); 
+        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, controlY + 0.5 *controlHeight, C2_CONTROL, highlight ? Highlight :BLACK, false); // Instruction Memory to Control
+    }
+    
+    public void drawShiftLeftToAddBranch(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, C3_REGISTERS + width*0.15 + ellipseWidth, R_BRANCH_LOGIC*1.3, C3_REGISTERS + width*0.25, highlight ? Highlight : BLACK, false); // Shift Left 2 to Add Branch
+    }
+    public void drawInstrToSignExtend(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, signExtendY + 0.5*ellipseHeight, highlight ? Highlight :BLACK, true, false); 
+        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, signExtendY + 0.5*ellipseHeight, signExtendX, highlight ? Highlight : BLACK, false); // Shift Left 2 to Add Branch
+    }
+    public void drawInstrToRegRead1(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, regY + 0.1 * regHeight, highlight ? Highlight : BLACK, true, false); 
+        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.1 * regHeight, C3_REGISTERS, highlight ? Highlight : BLACK, true); // Instruction Memory to Registers
+    }
+
+    public void drawInstrToMuxReg0(GraphicsContext gc, double width, double height, boolean highlight)
+    {
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, muxRegInputY + 0.15 * muxHeight, highlight ? Highlight : BLACK, true, false); 
+        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, muxRegInputY + 0.15 * muxHeight, C2_CONTROL - 0.02*width, highlight ? Highlight : BLACK, true); // Instruction Memory to MUX Register Input
+    }
+
+    public void drawInstrToMuxReg1(GraphicsContext gc, double width, double height, boolean highlight)
+    {
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, regY + 0.7 *regHeight, highlight ? Highlight : BLACK, true, false); 
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 *regHeight, C2_CONTROL - 0.05*width, highlight ? Highlight : BLACK, false,true); // Instruction Memory to Sign Extend
+        drawVerticalSegment(gc, C2_CONTROL - 0.05*width, regY + 0.7 *regHeight, muxRegInputY + 0.8*muxHeight, highlight ? Highlight : BLACK, true, false); // MUX Register Input to Register Input
+        drawRightArrow(gc, C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight, muxRegInputX , highlight ? Highlight : BLACK, false); // Instruction Memory to MUX Register Input
+    }
+
+    public void drawInstrToRegWrite(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, regY + 0.7 * regHeight, highlight ? Highlight : BLACK, true, false); 
+        drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 * regHeight, C3_REGISTERS, highlight ? Highlight : BLACK, true); // Instruction Memory to Registers
+    }
+
+    public void drawMUXRegToRegRead2(GraphicsContext gc, double width, double height, boolean highlight){
+        drawRightArrow(gc, C2_CONTROL, R_MAIN_PATH + 0.075 * height, C3_REGISTERS, highlight? Highlight : BLACK, false); // MUX Register Input to Registers
+    }
+
+    public void drawInstrToALUControl(GraphicsContext gc, double width, double height, boolean highlight)
+    {
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, signExtendY + 0.5*ellipseHeight, highlight ? Highlight :BLACK, true, false); 
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, signExtendY + 0.5*ellipseHeight, signExtendX - 0.7*signExtendWidth, highlight ? Highlight : BLACK, false, true); // Shift Left 2 to Add Branch
+        drawVerticalSegment(gc, signExtendX - 0.7*signExtendWidth, R_SIGN_EXTEND + 0.5*ellipseHeight, R_SIGN_EXTEND + 1.5*ellipseHeight, highlight ? Highlight : BLACK, true, false);
+        drawHorizontalSegment(gc, signExtendX - 0.7*signExtendWidth, R_SIGN_EXTEND + 1.5*ellipseHeight, C4_ALU - width*0.05, highlight ? Highlight : BLACK, false, false); // Instruction Memory to ALU Control
+        drawVerticalSegment(gc, C4_ALU - width*0.05, R_SIGN_EXTEND + 1.5*ellipseHeight, R_SIGN_EXTEND + 0.8*ellipseHeight, highlight ? Highlight : BLACK, false, false); // ALU Control to Sign Extend
+        drawRightArrow(gc, C4_ALU - width*0.05, R_SIGN_EXTEND + 0.8*ellipseHeight, aluControlX, highlight ? Highlight : BLACK, false); // Instruction Memory to ALU Control
+    }
+
+    public void drawSignExtendToShiftLeft(GraphicsContext gc, double width, double height, boolean highlight)
+    {
+        drawHorizontalSegment(gc, signExtendX + ellipseWidth, signExtendY + 0.5*ellipseHeight, muxAluInputX - muxWidth, highlight ? Highlight : BLACK, isDisable(), isCache());
+        drawVerticalSegment(gc,  muxAluInputX - muxWidth, signExtendY + 0.5*ellipseHeight, shiftLeft2Y + 0.5*ellipseHeight, highlight ? Highlight : BLACK, isDisable(), isCache());
+        drawRightArrow(gc,  muxAluInputX - muxWidth, shiftLeft2Y + 0.5*ellipseHeight, shiftLeft2X, highlight ? Highlight : BLACK, false); // Sign Extend to Shift Left 2
+    }
+
+    public void drawSignExtendToMuxALU(GraphicsContext gc, double width, double height, boolean highlight)
+    {
+        drawHorizontalSegment(gc, signExtendX + ellipseWidth, signExtendY + 0.5*ellipseHeight, muxAluInputX - muxWidth, highlight ? Highlight : BLACK, isDisable(), isCache());
+        drawVerticalSegment(gc,  muxAluInputX - muxWidth, signExtendY + 0.5*ellipseHeight, muxAluInputY + 0.8*muxHeight, highlight ? Highlight : BLACK, isDisable(), isCache());
+        drawRightArrow(gc,  muxAluInputX - muxWidth, muxAluInputY + 0.8*muxHeight, muxAluInputX, highlight ? Highlight : BLACK, false); // Sign Extend to Shift Left 2
+    }
+
+        // Registers -> MUX ALU Input
+    public void drawRegistersToMuxALU(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, regX + rectWidth, muxAluInputY + 0.3 * muxHeight, muxAluInputX, highlight ? Highlight : BLACK, false);
+    }
+
+    // Registers -> Data Memory
+    public void drawRegistersToDataMemory(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawHorizontalSegment(gc, regX + rectWidth, muxAluInputY + 0.3 * muxHeight, regX + rectWidth * 1.1, highlight ? Highlight : BLACK, false, false);
+        drawVerticalSegment(gc, regX + rectWidth * 1.1, muxAluInputY + 0.3 * muxHeight, dataMemY + 0.8 * dataMemHeight, highlight ? Highlight : BLACK, true, false);
+        drawRightArrow(gc, regX + rectWidth * 1.1, dataMemY + 0.8 * dataMemHeight, dataMemX, highlight ? Highlight : BLACK, false);
+    }
+
+    // Registers -> ALU
+    public void drawRegistersToALU(GraphicsContext gc, double width, double height, boolean highlight) {
+
+        drawRightArrow(gc, regX + rectWidth, R_MAIN_PATH + 0.025 * height, aluX, highlight ? Highlight : BLACK, false);
+    }
+
+    // MUX ALU Input -> ALU
+    public void drawMuxALUToALU(GraphicsContext gc, double width, double height, boolean highlight) {
+        drawRightArrow(gc, muxAluInputX + muxWidth, muxAluInputY + 0.5 * muxHeight, aluX, highlight ? Highlight : BLACK, false);
+    }
+
+    // ALU -> Data Memory
+    public void drawALUToDataMemory(GraphicsContext gc, double width, double height, boolean highlight) {
+
+        drawRightArrow(gc, C4_ALU + aluWidth, aluY + 0.6 * aluHeight, dataMemX, highlight ? Highlight : BLACK, false);
+    }
+
+    // ALU -> Flags
+    public void drawALUToFlags(GraphicsContext gc, double width, double height, boolean highlight) {
+
+        drawUpArrow(gc, aluX + 0.48 * aluWidth, aluY + 0.12 * aluHeight, flagY + flagBoxSize, highlight ? Highlight : BLACK, isCache());
+    }
+
+    // ALU -> MUX MemToReg
+    public void drawALUToMuxMemToReg(GraphicsContext gc, double width, double height, boolean highlight) {
+
+        drawHorizontalSegment(gc, aluX + aluWidth, aluY + 0.6 * aluHeight, dataMemX - 0.25 * dataMemWidth, highlight ? Highlight : BLACK, false, false);
+        drawVerticalSegment(gc, dataMemX - 0.25 * dataMemWidth, aluY + 0.6 * aluHeight, dataMemY + dataMemHeight * 1.2, highlight ? Highlight : BLACK, true, isCache());
+        drawHorizontalSegment(gc, dataMemX - 0.25 * dataMemWidth, dataMemY + dataMemHeight * 1.2, muxMemToRegX - 0.8 * muxWidth, highlight ? Highlight : BLACK, false, false);
+        drawVerticalSegment(gc, muxMemToRegX - 0.8 * muxWidth, dataMemY + dataMemHeight * 1.2, muxMemToRegY + 0.8 * muxHeight, highlight ? Highlight : BLACK, isDisable(), isCache());
+        drawRightArrow(gc, muxMemToRegX - 0.8 * muxWidth, muxMemToRegY + 0.8 * muxHeight, muxMemToRegX, highlight ? Highlight : BLACK, false);
+    }
+
+// Data Memory -> MUX MemToReg
+public void drawDataMemoryToMuxMemToReg(GraphicsContext gc, double width, double height, boolean highlight) {
+    drawRightArrow(gc, dataMemX + dataMemWidth, muxMemToRegY + 0.2 * muxHeight, muxMemToRegX, highlight ? Highlight : BLACK, false);
+}
+
+// MUX MemToReg -> Registers
+public void drawMuxMemToRegToRegisters(GraphicsContext gc, double width, double height, boolean highlight) {
+    drawHorizontalSegment(gc, muxMemToRegX + muxWidth, muxMemToRegY + 0.5 * muxHeight, muxMemToRegX + muxWidth * 1.8, highlight ? Highlight : BLACK, false, false);
+    drawVerticalSegment(gc, muxMemToRegX + muxWidth * 1.8, muxMemToRegY + 0.5 * muxHeight, aluControlY + aluControlHeight * 2, highlight ? Highlight : BLACK, false, false);
+    drawHorizontalSegment(gc, muxMemToRegX + muxWidth * 1.8, aluControlY + aluControlHeight * 2, regX - 0.3 * rectWidth, highlight ? Highlight : BLACK, false, false);
+    drawVerticalSegment(gc, regX - rectWidth * 0.3, aluControlY + aluControlHeight * 2, regY + 0.9 * regHeight, highlight ? Highlight : BLACK, false, false);
+    drawRightArrow(gc, regX - rectWidth * 0.3, regY + 0.9 * regHeight, regX, highlight ? Highlight : BLACK, false);
+}
+
+public void drawReg2Loc(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.7*controlWidth, controlY + 0.05*controlHeight, controlX + controlWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, controlX + controlWidth, addBranchY + addBranchHeight*0.65, controlY + 0.05*controlHeight, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, controlX + controlWidth, addBranchY + addBranchHeight*0.65, instrMemX + instrMemWidth*1.15, color, isDisable(), isCache());
+    drawVerticalSegment(gc, instrMemX + instrMemWidth*1.15, addBranchY + addBranchHeight*0.65, muxRegInputY + muxHeight*1.75, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, instrMemX + instrMemWidth*1.15,  muxRegInputY + muxHeight*1.75, muxRegInputX + 0.5*muxWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, muxRegInputX + 0.5*muxWidth, muxRegInputY + muxHeight*1.75, muxRegInputY + muxHeight, color, isDisable(), isCache());
+}
+
+public void drawUncondBranch(GraphicsContext gc, double orGateX, double gateW, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.85*controlWidth, controlY + 0.14*controlHeight, orGateX + 0.1*gateW, color, isDisable(), isCache());
+}
+
+public void drawFlagBranch(GraphicsContext gc, double andGate1X, double gateW, double andGateY, double gateH, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.9*controlWidth, controlY + 0.23*controlHeight, andGate1X - 0.5*gateW, color, isDisable(), isCache());
+    drawVerticalSegment(gc, andGate1X - 0.5*gateW, andGateY + 0.2*gateH, controlY + 0.23*controlHeight, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, andGate1X - 0.5*gateW, andGateY + 0.2*gateH, andGate1X, color, isDisable(), isCache());
+}
+
+public void drawZeroBranch(GraphicsContext gc, double andGate2X, double gateW, double andGateY, double gateH, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.95*controlWidth, controlY + 0.32*controlHeight, andGate2X - 0.7*gateW, color, isDisable(), isCache());
+    drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.2*gateH, controlY + 0.32*controlHeight, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.2*gateH, andGate2X, color, isDisable(), isCache());
+}
+
+public void drawMemRead(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.97*controlWidth, controlY + 0.41*controlHeight, muxMemToRegX + 2.5*muxWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, muxMemToRegX + 2.5*muxWidth, controlY + 0.41*controlHeight, dataMemY + 1.4*dataMemHeight, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, muxMemToRegX + 2.5*muxWidth, dataMemY + 1.4*dataMemHeight, dataMemX + dataMemWidth*0.5, color, isDisable(), isCache());
+    drawVerticalSegment(gc, dataMemX + dataMemWidth*0.5, dataMemY + 1.4*dataMemHeight, dataMemY + dataMemHeight, color, isDisable(), isCache());
+}
+
+public void drawMemToReg(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.99*controlWidth, controlY + 0.5*controlHeight, muxMemToRegX + 0.5*muxWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, muxMemToRegX + 0.5*muxWidth, controlY + 0.5*controlHeight, muxMemToRegY, color, isDisable(), isCache());
+}
+
+public void drawMemWrite(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.97*controlWidth, controlY + 0.59*controlHeight, dataMemX + dataMemWidth*0.5, color, isDisable(), isCache());
+    drawVerticalSegment(gc, dataMemX + dataMemWidth*0.5, controlY + 0.59*controlHeight, dataMemY, color, isDisable(), isCache());
+}
+
+public void drawFlagWrite(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.98*controlWidth, controlY + 0.68*controlHeight, aluX + 0.48*aluWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, aluX + 0.48*aluWidth, controlY + 0.68*controlHeight, flagY, color, isDisable(), isCache());
+}
+
+public void drawALUSrc(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.93*controlWidth, controlY + 0.77*controlHeight, muxAluInputX + 0.5*muxWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, muxAluInputX + 0.5*muxWidth, controlY + 0.77*controlHeight, muxAluInputY, color, isDisable(), isCache());
+}
+
+public void drawALUOp(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.83*controlWidth, controlY + 0.86*controlHeight, muxAluInputX - 1.5*muxWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, muxAluInputX - 1.5*muxWidth, controlY + 0.86*controlHeight, aluControlY + 1.7 * aluControlHeight, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, muxAluInputX - 1.5*muxWidth, aluControlY + 1.7 * aluControlHeight, aluControlX + aluControlHeight*0.5, color, isDisable(), isCache());
+    drawVerticalSegment(gc, aluControlX + aluControlHeight*0.5, aluControlY + 1.7 * aluControlHeight, aluControlY + aluControlHeight, color, isDisable(), isCache());
+}
+
+public void drawRegWrite(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, controlX + 0.7*controlWidth, controlY + 0.95*controlHeight, regX + 0.5 *rectWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, regX + 0.5 *rectWidth, controlY + 0.95*controlHeight, regY, color, isDisable(), isCache());
+}
+
+public void drawFlagToAndGate(GraphicsContext gc, double andGate1X, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, flagX + 4*flagBoxSize, flagY + 0.5*flagBoxSize, andGate1X , color, isDisable(), isCache());
+}
+
+public void drawALUToALUControl(GraphicsContext gc, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawVerticalSegment(gc, aluX + 0.48*aluWidth, aluY + 0.88*aluHeight, aluControlY + aluControlHeight*0.5, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, aluX + 0.48*aluWidth, aluControlY + aluControlHeight*0.5, aluControlX + aluControlWidth, color, isDisable(), isCache());
+}
+
+public void drawALUToAndGate(GraphicsContext gc, double andGate2X, double gateW, double andGateY, double gateH, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, aluX + aluWidth, aluY + 0.4 * aluBlockHeight, andGate2X - 0.7*gateW, color, isDisable(), isCache());
+    drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, aluY + 0.4 * aluBlockHeight, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, andGate2X, color, isDisable(), isCache());
+}
+
+public void drawAnd1ToOrGate(GraphicsContext gc, double andGate1X, double gateW, double andGateY, double gateH, double andGate2X, double orGateY, double orGateX, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, andGate1X + 0.9*gateW, andGateY + 0.5*gateH, andGate2X - 1.2*gateW, color, isDisable(), isCache());
+    drawVerticalSegment(gc, andGate2X - 1.2*gateW, orGateY + 0.65*gateH, andGateY + 0.5*gateH, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, andGate2X - 1.2*gateW, orGateY + 0.65*gateH, orGateX + 0.2*gateW, color, isDisable(), isCache());
+}
+
+public void drawAnd2ToOrGate(GraphicsContext gc, double andGate2X, double gateW, double andGateY, double gateH, double orGateX, double orGateY, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, andGate2X + 0.95*gateW, andGateY + 0.5*gateH, orGateX - 0.8*gateW, color, isDisable(), isCache());
+    drawVerticalSegment(gc, orGateX - 0.8*gateW, orGateY + 0.95*gateH, andGateY + 0.5*gateH, color, isDisable(), isCache());
+    drawHorizontalSegment(gc, orGateX - 0.8*gateW, orGateY + 0.95*gateH, orGateX + 0.1*gateW, color, isDisable(), isCache());
+}
+
+public void drawOrGateToMux(GraphicsContext gc, double orGateX, double gateW, double orGateY, double gateH, boolean highlight) {
+    Color color = highlight ? HighlightControl : ARM_BLUE;
+    drawHorizontalSegment(gc, orGateX + 1.2*gateW, orGateY + 0.6*gateH, muxPcSourceX + 0.5*muxWidth, color, isDisable(), isCache());
+    drawVerticalSegment(gc, muxPcSourceX + 0.5*muxWidth, orGateY + 0.6*gateH, muxPcSourceY + muxHeight, color, isDisable(), isCache());
+}
+
 }

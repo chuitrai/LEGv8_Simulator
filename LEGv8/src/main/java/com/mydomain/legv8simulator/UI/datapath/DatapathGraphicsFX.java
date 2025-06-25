@@ -32,6 +32,39 @@ public final class DatapathGraphicsFX {
     public static final Color GREY = Color.rgb(242, 242, 242);
     public static final Color CONTROL_SIGNAL = Color.web("#3BA0E2");
     public static final Color ARM_BLUE = Color.web("#44CAF3");
+    public static final Color pcBorderColor = Color.BLACK;
+    public static final Color pcFillColor = Color.web("#ffe3e3");
+    public static final Color instrMemBorderColor = Color.BLACK;
+    public static final Color instrMemFillColor = Color.web("#e3f6e3");
+    public static final Color regBorderColor = Color.BLACK;
+    public static final Color regFillColor = Color.web("#ffe3ec");
+    public static final Color aluBorderColor = Color.BLACK;
+    public static final Color aluFillColor = Color.web("#f3e5f5");
+    public static final Color dataMemBorderColor = Color.BLACK;
+    public static final Color dataMemFillColor = Color.web("#fde2e2");
+
+    public static final Color add4BorderColor = Color.web("#1C2B2B");
+    public static final Color add4FillColor = Color.web("#f0f4f8");
+    public static final Color shiftLeft2BorderColor = Color.web("#1C2B2B");
+    public static final Color shiftLeft2FillColor = Color.web("#f9f9f9");
+    public static final Color addBranchBorderColor = Color.web("#1C2B2B");
+    public static final Color addBranchFillColor = Color.web("#f0f4f8");
+
+    public static final Color controlBorderColor = Color.web("#12C0E8");
+    public static final Color controlFillColor = Color.web("#E1F5FE");
+    public static final Color signExtendBorderColor = Color.web("#1C2B2B");
+    public static final Color signExtendFillColor = Color.web("#f0f4f8");
+    public static final Color aluControlBorderColor = Color.web("#12C0E8");
+    public static final Color aluControlFillColor = Color.web("#E1F5FE");
+
+    public static final Color muxBorderColor = Color.web("#1C2B2B");
+    public static final Color muxFillColor = Color.web("#E6E6FA");
+
+    public static final Color Highlight = Color.ROSYBROWN;
+    public static final Color HighlightControl = Color.web("#FFB6C1");
+
+    
+
 
     /**
      * Vẽ một gạch chéo để thể hiện việc mở rộng dấu hoặc đệm zero.
@@ -162,6 +195,15 @@ public final class DatapathGraphicsFX {
     public static void drawCompRect(GraphicsContext gc, double x, double y,
                                     double width, double height, Color colorLine, Color colorFill) {
         gc.setStroke(colorLine);
+        gc.setFill(colorFill); // Giả định fill cùng màu với stroke
+        gc.setLineWidth(2);
+        gc.fillRect(x, y, width, height);
+        gc.strokeRect(x, y, width, height);
+    }
+
+    public static void drawCompRect(GraphicsContext gc, double x, double y,
+                                    double width, double height, Color colorLine, Color colorFill, boolean highlight) {
+        gc.setStroke((highlight)? RED : colorLine);
         gc.setFill(colorFill); // Giả định fill cùng màu với stroke
         gc.setLineWidth(2);
         gc.fillRect(x, y, width, height);
