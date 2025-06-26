@@ -14,24 +14,27 @@ public class LEGv8Datapath extends Pane {
     private Canvas canvas;
     private GraphicsContext gc;
 
-    private static double width;
-    private static double height;
+    private double width;
+    private double height;
 
     // Trong class LEGv8Datapath
 
-// --- Biến toàn cục cho layout ---
-private double C1_PC_IM, C2_CONTROL, C3_REGISTERS, C4_ALU, C5_DATAMEM, C6_MUX;
-private double R_BRANCH_LOGIC, R_CONTROL, R_MAIN_PATH, R_SIGN_EXTEND;
-private double rectWidth, rectHeight, aluWidth, aluHeight, pcWidth, pcHeight, ellipseWidth, ellipseHeight;
-private double pcRectX, pcRectY, instrMemX, instrMemY, regX, regY, aluX, aluY, dataMemX, dataMemY;
-private double add4X, add4Y, shiftLeft2X, shiftLeft2Y, addBranchX, addBranchY;
-private double controlX, controlY, signExtendX, signExtendY, aluControlX, aluControlY;
-private double flagSize, flagX, flagY;
-private double muxRegInputX, muxRegInputY, muxAluInputX, muxAluInputY, muxPcSourceX, muxPcSourceY, muxMemToRegX, muxMemToRegY;
-private double pcRectWidth, pcRectHeight, instrMemWidth, instrMemHeight, regWidth, regHeight, aluBlockWidth, aluBlockHeight;
-private double dataMemWidth, dataMemHeight, add4Width, add4Height, shiftLeft2Width, shiftLeft2Height, addBranchWidth, addBranchHeight;
-private double controlWidth, controlHeight, signExtendWidth, signExtendHeight, aluControlWidth, aluControlHeight, flagBoxSize;
-private double muxWidth, muxHeight;
+    // --- Biến toàn cục cho layout ---
+    private double C1_PC_IM, C2_CONTROL, C3_REGISTERS, C4_ALU, C5_DATAMEM, C6_MUX;
+    private double R_BRANCH_LOGIC, R_CONTROL, R_MAIN_PATH, R_SIGN_EXTEND;
+    private double rectWidth, rectHeight, aluWidth, aluHeight, pcWidth, pcHeight, ellipseWidth, ellipseHeight;
+    private double pcRectX, pcRectY, instrMemX, instrMemY, regX, regY, aluX, aluY, dataMemX, dataMemY;
+    private double add4X, add4Y, shiftLeft2X, shiftLeft2Y, addBranchX, addBranchY;
+    private double controlX, controlY, signExtendX, signExtendY, aluControlX, aluControlY;
+    private double flagSize, flagX, flagY;
+    private double muxRegInputX, muxRegInputY, muxAluInputX, muxAluInputY, muxPcSourceX, muxPcSourceY, muxMemToRegX, muxMemToRegY;
+    private double pcRectWidth, pcRectHeight, instrMemWidth, instrMemHeight, regWidth, regHeight, aluBlockWidth, aluBlockHeight;
+    private double dataMemWidth, dataMemHeight, add4Width, add4Height, shiftLeft2Width, shiftLeft2Height, addBranchWidth, addBranchHeight;
+    private double controlWidth, controlHeight, signExtendWidth, signExtendHeight, aluControlWidth, aluControlHeight, flagBoxSize;
+    private double muxWidth, muxHeight;
+    private double gateW, gateH;
+    private double andGate1X, andGate2X, orGateX;
+    private double andGateY, orGateY;
 
 // Hàm cập nhật giá trị các biến layout
 public void updateLayoutVars(double width, double height) {
@@ -128,6 +131,19 @@ public void updateLayoutVars(double width, double height) {
     flagBoxSize = flagSize;
     muxWidth = 0.02 * width;
     muxHeight = 0.09 * height;
+
+    // Các cổng logic
+    gateW = width * 0.022;
+    gateH = height * 0.028;
+
+    // Vị trí X của các cổng logic
+    andGate1X = C4_ALU + aluBlockWidth + width * 0.015;
+    andGate2X = andGate1X + gateW + width * 0.045;
+    orGateX = andGate2X + gateW*2.5;
+
+    // Vị trí Y của các cổng logic
+    andGateY = flagY - 0.3 * gateH;
+    orGateY = R_BRANCH_LOGIC + height * 0.1;
 }
 
     public LEGv8Datapath() {
@@ -201,17 +217,7 @@ public void updateLayoutVars(double width, double height) {
         // // ===================================
         // // 3. VẼ CÁC CỔNG LOGIC
         // // ===================================
-        double gateW = width * 0.022;
-        double gateH = height * 0.028;
 
-        // Vị trí X của các cổng logic
-        double andGate1X = C4_ALU + aluBlockWidth + width * 0.015;
-        double andGate2X = andGate1X + gateW + width * 0.045;
-        double orGateX = andGate2X + gateW*2.5;
-
-        // Vị trí Y của các cổng logic
-        double andGateY = flagY - 0.3 * gateH;
-        double orGateY = R_BRANCH_LOGIC + height * 0.1;
 
         // --- Vẽ các cổng ---
         drawAndGateHorizontal(gc, andGate1X, andGateY, gateW, gateH, CONTROL_SIGNAL);
@@ -221,39 +227,39 @@ public void updateLayoutVars(double width, double height) {
         // // ===================================
         // // 4. VẼ CÁC ĐƯỜNG DÂY DỮ LIỆU (DATA PATH - BLACK)
         // // ===================================
-        drawPCToAdd4(gc, width, height, false);
-        drawPCToInstructionMemory(gc, width, height, false);
-        drawPCToAddBranch(gc, width, height, false);
-        drawAdd4ToMux(gc, width, height, false);
-        drawMuxToPC(gc, width, height, false);
-        drawAddBranchToMUX(gc, width, height, false);
-        drawAdd4(gc, width, height, false);
-        drawInstrToControl(gc, width, height, false);
-        drawShiftLeftToAddBranch(gc, width, height, false);
-        drawInstrToSignExtend(gc, width, height, false);
-        drawInstrToRegRead1(gc, width, height, false);
-        drawInstrToMuxReg0(gc, width, height, false);
-        drawInstrToMuxReg1(gc, width, height, false);
-        drawInstrToRegWrite(gc, width, height, false);
-        drawMUXRegToRegRead2(gc, width, height, false);
-        drawInstrToALUControl(gc, width, height, false);
-        drawSignExtendToShiftLeft(gc, width, height, false);
-        drawSignExtendToMuxALU(gc, width, height, false);
-        drawRegistersToMuxALU(gc, width, height, false);
-        drawRegistersToDataMemory(gc, width, height, false);
-        drawRegistersToALU(gc, width, height, false);
-        drawMuxALUToALU(gc, width, height, false);
-        drawALUToDataMemory(gc, width, height, false);
-        drawALUToFlags(gc, width, height, false);
-        drawALUToMuxMemToReg(gc, width, height, false);
-        drawDataMemoryToMuxMemToReg(gc, width, height, false);
-        drawMuxMemToRegToRegisters(gc, width, height, false);
+        drawPCToAdd4(gc, false);
+        drawPCToInstructionMemory(gc, false);
+        drawPCToAddBranch(gc, false);
+        drawAdd4ToMux(gc, false);
+        drawMuxToPC(gc, false);
+        drawAddBranchToMUX(gc, false);
+        drawAdd4(gc, false);
+        drawInstrToControl(gc, false);
+        drawShiftLeftToAddBranch(gc, false);
+        drawInstrToSignExtend(gc, false);
+        drawInstrToRegRead1(gc, false);
+        drawInstrToMuxReg0(gc, false);
+        drawInstrToMuxReg1(gc, false);
+        drawInstrToRegWrite(gc, false);
+        drawMUXRegToRegRead2(gc, false);
+        drawInstrToALUControl(gc, false);
+        drawSignExtendToShiftLeft(gc, false);
+        drawSignExtendToMuxALU(gc, false);
+        drawRegistersToMuxALU(gc, false);
+        drawRegistersToDataMemory(gc, false);
+        drawRegistersToALU(gc, false);
+        drawMuxALUToALU(gc, false);
+        // drawALUToDataMemory(gc, false);
+        // drawALUToFlags(gc, false);
+        drawALUToMuxMemToReg(gc, false);
+        drawDataMemoryToMuxMemToReg(gc, false);
+        drawMuxMemToRegToRegisters(gc, false);
 
         // Control signals
         drawReg2Loc(gc, false);
-        drawUncondBranch(gc, orGateX, gateW, false);
-        drawFlagBranch(gc, andGate1X, gateW, andGateY, gateH, false);
-        drawZeroBranch(gc, andGate2X, gateW, andGateY, gateH, false);
+        drawUncondBranch(gc, false);
+        drawFlagBranch(gc, false);
+        drawZeroBranch(gc, false);
         drawMemRead(gc, false);
         drawMemToReg(gc, false);
         drawMemWrite(gc, false);
@@ -261,12 +267,12 @@ public void updateLayoutVars(double width, double height) {
         drawALUSrc(gc, false);
         drawALUOp(gc, false);
         drawRegWrite(gc, false);
-        drawFlagToAndGate(gc, andGate1X, false);
+        drawFlagToAndGate(gc, false);
         drawALUToALUControl(gc, false);
-        drawALUToAndGate(gc, andGate2X, gateW, andGateY, gateH, false);
-        drawAnd1ToOrGate(gc, andGate1X, gateW, andGateY, gateH, andGate2X, orGateY, orGateX, false);
-        drawAnd2ToOrGate(gc, andGate2X, gateW, andGateY, gateH, orGateX, orGateY, false);
-        drawOrGateToMux(gc, orGateX, gateW, orGateY, gateH, false);
+        drawALUToAndGate(gc, false);
+        drawAnd1ToOrGate(gc, false);
+        drawAnd2ToOrGate(gc, false);
+        drawOrGateToMux(gc, false);
 
         // --- Nhãn cho các khối chính ---
         drawTextBold(gc, "PC", pcRectX + pcRectWidth / 2, pcRectY + pcRectHeight / 2, BLACK, baseFontSize + 2, TextAlignment.CENTER);
@@ -333,73 +339,72 @@ public void updateLayoutVars(double width, double height) {
         drawText(gc, "64", signExtendX + signExtendWidth + 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.LEFT);
     }
 
-    public void drawPCToAdd4(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawPCToAdd4(GraphicsContext gc, boolean highlight) {
         drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, add4Y + add4Height*0.25, highlight? Highlight :BLACK, false, false); 
         drawRightArrow(gc, C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, add4X, highlight? Highlight :BLACK, false); 
         drawHorizontalSegment(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, highlight ? Highlight :BLACK, false, true);     
         }
-    public void drawPCToInstructionMemory(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawPCToInstructionMemory(GraphicsContext gc, boolean highlight) {
         drawRightArrow(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, instrMemX, highlight ? Highlight : BLACK, false); // PC to Instruction Memory
     }
 
-    public void drawPCToAddBranch(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawPCToAddBranch(GraphicsContext gc, boolean highlight) {
         drawHorizontalSegment(gc, C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, highlight ? Highlight :BLACK, false, true);     
         drawVerticalSegment(gc, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, controlY, highlight? Highlight :BLACK, false, true); 
         drawHorizontalSegment(gc, C1_PC_IM + pcWidth*1.5, controlY, add4X + add4Width*2.5, highlight ? Highlight :BLACK, true, isCache());
         drawVerticalSegment(gc, add4X + add4Width*2.5, controlY, addBranchY + 0.25*addBranchHeight, highlight ? Highlight :BLACK, isDisable(), isCache());
         drawRightArrow(gc, add4X + add4Width*2.5, addBranchY + 0.25*addBranchHeight, addBranchX, highlight ? Highlight :BLACK, false); // PC to Shift Left 2
     }
-    public void drawAdd4ToMux(GraphicsContext gc, double width, double height, boolean highlight) {
-        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, highlight ? Highlight :BLACK, false); // Add 4 to MUX
+    public void drawAdd4ToMux(GraphicsContext gc, boolean highlight) {
+        drawRightArrow(gc, add4X + add4Width, add4Y + 0.5*add4Height, muxPcSourceX, highlight ? Highlight :BLACK, false); // Add 4 to MUX
     }
 
-    public void drawMuxToPC(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawMuxToPC(GraphicsContext gc, boolean highlight) {
 
         drawRightArrow(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, C1_PC_IM, highlight ? Highlight :BLACK, false); // To PC
         drawVerticalSegment(gc, C1_PC_IM - pcWidth*0.5, R_MAIN_PATH, R_BRANCH_LOGIC*0.3,  highlight ? Highlight :BLACK, false, false); 
         drawHorizontalSegment(gc, C1_PC_IM - pcWidth*0.5, R_BRANCH_LOGIC*0.3, C6_MUX + 0.04*width, highlight ? Highlight :BLACK, false, false);
         drawVerticalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.3, R_BRANCH_LOGIC*0.9, highlight ? Highlight :BLACK, false, false); // MUX to PC
-        drawRightArrow(gc, C1_PC_IM + width*0.13 + pcWidth, R_BRANCH_LOGIC*0.75, C6_MUX - 0.02*width, highlight ? Highlight :BLACK, false); // Add 4 to MUX
         drawHorizontalSegment(gc, C6_MUX + 0.04*width, R_BRANCH_LOGIC*0.9, C6_MUX, highlight ? Highlight :BLACK, false, false); // MUX to PC
     }
 
-    public void drawAddBranchToMUX(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawAddBranchToMUX(GraphicsContext gc, boolean highlight) {
         drawRightArrow(gc, C3_REGISTERS + width*0.25 + pcWidth*1.5, R_BRANCH_LOGIC*1.1, C6_MUX - 0.02*width, highlight ? Highlight :BLACK, false); // Add Branch to MUX
     }
 
-    public void drawAdd4(GraphicsContext gc, double width, double height, boolean highlight) {
-        drawRightArrow(gc, C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.85, C1_PC_IM + width*0.13, highlight ? Highlight : BLACK, false); // Add 4
+    public void drawAdd4(GraphicsContext gc, boolean highlight) {
+        drawRightArrow(gc, C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.85, add4X, highlight ? Highlight : BLACK, false); // Add 4
     }
 
-    public void drawInstrToControl(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawInstrToControl(GraphicsContext gc, boolean highlight) {
 
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, controlY + 0.5 *controlHeight, highlight ? Highlight :BLACK, true, false); 
         drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, controlY + 0.5 *controlHeight, C2_CONTROL, highlight ? Highlight :BLACK, false); // Instruction Memory to Control
     }
     
-    public void drawShiftLeftToAddBranch(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawShiftLeftToAddBranch(GraphicsContext gc, boolean highlight) {
         drawRightArrow(gc, C3_REGISTERS + width*0.15 + ellipseWidth, R_BRANCH_LOGIC*1.3, C3_REGISTERS + width*0.25, highlight ? Highlight : BLACK, false); // Shift Left 2 to Add Branch
     }
-    public void drawInstrToSignExtend(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawInstrToSignExtend(GraphicsContext gc, boolean highlight) {
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, signExtendY + 0.5*ellipseHeight, highlight ? Highlight :BLACK, true, false); 
         drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, signExtendY + 0.5*ellipseHeight, signExtendX, highlight ? Highlight : BLACK, false); // Shift Left 2 to Add Branch
     }
-    public void drawInstrToRegRead1(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawInstrToRegRead1(GraphicsContext gc, boolean highlight) {
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, regY + 0.1 * regHeight, highlight ? Highlight : BLACK, true, false); 
         drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.1 * regHeight, C3_REGISTERS, highlight ? Highlight : BLACK, true); // Instruction Memory to Registers
     }
 
-    public void drawInstrToMuxReg0(GraphicsContext gc, double width, double height, boolean highlight)
+    public void drawInstrToMuxReg0(GraphicsContext gc, boolean highlight)
     {
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, muxRegInputY + 0.15 * muxHeight, highlight ? Highlight : BLACK, true, false); 
         drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, muxRegInputY + 0.15 * muxHeight, C2_CONTROL - 0.02*width, highlight ? Highlight : BLACK, true); // Instruction Memory to MUX Register Input
     }
 
-    public void drawInstrToMuxReg1(GraphicsContext gc, double width, double height, boolean highlight)
+    public void drawInstrToMuxReg1(GraphicsContext gc, boolean highlight)
     {
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, regY + 0.7 *regHeight, highlight ? Highlight : BLACK, true, false); 
@@ -408,17 +413,17 @@ public void updateLayoutVars(double width, double height) {
         drawRightArrow(gc, C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight, muxRegInputX , highlight ? Highlight : BLACK, false); // Instruction Memory to MUX Register Input
     }
 
-    public void drawInstrToRegWrite(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawInstrToRegWrite(GraphicsContext gc, boolean highlight) {
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight : BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, regY + 0.7 * regHeight, highlight ? Highlight : BLACK, true, false); 
         drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 * regHeight, C3_REGISTERS, highlight ? Highlight : BLACK, true); // Instruction Memory to Registers
     }
 
-    public void drawMUXRegToRegRead2(GraphicsContext gc, double width, double height, boolean highlight){
+    public void drawMUXRegToRegRead2(GraphicsContext gc, boolean highlight){
         drawRightArrow(gc, C2_CONTROL, R_MAIN_PATH + 0.075 * height, C3_REGISTERS, highlight? Highlight : BLACK, false); // MUX Register Input to Registers
     }
 
-    public void drawInstrToALUControl(GraphicsContext gc, double width, double height, boolean highlight)
+    public void drawInstrToALUControl(GraphicsContext gc, boolean highlight)
     {
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, signExtendY + 0.5*ellipseHeight, highlight ? Highlight :BLACK, true, false); 
@@ -429,14 +434,14 @@ public void updateLayoutVars(double width, double height) {
         drawRightArrow(gc, C4_ALU - width*0.05, R_SIGN_EXTEND + 0.8*ellipseHeight, aluControlX, highlight ? Highlight : BLACK, false); // Instruction Memory to ALU Control
     }
 
-    public void drawSignExtendToShiftLeft(GraphicsContext gc, double width, double height, boolean highlight)
+    public void drawSignExtendToShiftLeft(GraphicsContext gc, boolean highlight)
     {
         drawHorizontalSegment(gc, signExtendX + ellipseWidth, signExtendY + 0.5*ellipseHeight, muxAluInputX - muxWidth, highlight ? Highlight : BLACK, isDisable(), isCache());
         drawVerticalSegment(gc,  muxAluInputX - muxWidth, signExtendY + 0.5*ellipseHeight, shiftLeft2Y + 0.5*ellipseHeight, highlight ? Highlight : BLACK, isDisable(), isCache());
         drawRightArrow(gc,  muxAluInputX - muxWidth, shiftLeft2Y + 0.5*ellipseHeight, shiftLeft2X, highlight ? Highlight : BLACK, false); // Sign Extend to Shift Left 2
     }
 
-    public void drawSignExtendToMuxALU(GraphicsContext gc, double width, double height, boolean highlight)
+    public void drawSignExtendToMuxALU(GraphicsContext gc, boolean highlight)
     {
         drawHorizontalSegment(gc, signExtendX + ellipseWidth, signExtendY + 0.5*ellipseHeight, muxAluInputX - muxWidth, highlight ? Highlight : BLACK, isDisable(), isCache());
         drawVerticalSegment(gc,  muxAluInputX - muxWidth, signExtendY + 0.5*ellipseHeight, muxAluInputY + 0.8*muxHeight, highlight ? Highlight : BLACK, isDisable(), isCache());
@@ -444,42 +449,42 @@ public void updateLayoutVars(double width, double height) {
     }
 
         // Registers -> MUX ALU Input
-    public void drawRegistersToMuxALU(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawRegistersToMuxALU(GraphicsContext gc, boolean highlight) {
         drawRightArrow(gc, regX + rectWidth, muxAluInputY + 0.3 * muxHeight, muxAluInputX, highlight ? Highlight : BLACK, false);
     }
 
     // Registers -> Data Memory
-    public void drawRegistersToDataMemory(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawRegistersToDataMemory(GraphicsContext gc, boolean highlight) {
         drawHorizontalSegment(gc, regX + rectWidth, muxAluInputY + 0.3 * muxHeight, regX + rectWidth * 1.1, highlight ? Highlight : BLACK, false, false);
         drawVerticalSegment(gc, regX + rectWidth * 1.1, muxAluInputY + 0.3 * muxHeight, dataMemY + 0.8 * dataMemHeight, highlight ? Highlight : BLACK, true, false);
         drawRightArrow(gc, regX + rectWidth * 1.1, dataMemY + 0.8 * dataMemHeight, dataMemX, highlight ? Highlight : BLACK, false);
     }
 
     // Registers -> ALU
-    public void drawRegistersToALU(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawRegistersToALU(GraphicsContext gc, boolean highlight) {
 
         drawRightArrow(gc, regX + rectWidth, R_MAIN_PATH + 0.025 * height, aluX, highlight ? Highlight : BLACK, false);
     }
 
     // MUX ALU Input -> ALU
-    public void drawMuxALUToALU(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawMuxALUToALU(GraphicsContext gc, boolean highlight) {
         drawRightArrow(gc, muxAluInputX + muxWidth, muxAluInputY + 0.5 * muxHeight, aluX, highlight ? Highlight : BLACK, false);
     }
 
     // ALU -> Data Memory
-    public void drawALUToDataMemory(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawALUToDataMemory(GraphicsContext gc, boolean highlight) {
 
         drawRightArrow(gc, C4_ALU + aluWidth, aluY + 0.6 * aluHeight, dataMemX, highlight ? Highlight : BLACK, false);
     }
 
     // ALU -> Flags
-    public void drawALUToFlags(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawALUToFlags(GraphicsContext gc, boolean highlight) {
 
         drawUpArrow(gc, aluX + 0.48 * aluWidth, aluY + 0.12 * aluHeight, flagY + flagBoxSize, highlight ? Highlight : BLACK, isCache());
     }
 
     // ALU -> MUX MemToReg
-    public void drawALUToMuxMemToReg(GraphicsContext gc, double width, double height, boolean highlight) {
+    public void drawALUToMuxMemToReg(GraphicsContext gc, boolean highlight) {
 
         drawHorizontalSegment(gc, aluX + aluWidth, aluY + 0.6 * aluHeight, dataMemX - 0.25 * dataMemWidth, highlight ? Highlight : BLACK, false, false);
         drawVerticalSegment(gc, dataMemX - 0.25 * dataMemWidth, aluY + 0.6 * aluHeight, dataMemY + dataMemHeight * 1.2, highlight ? Highlight : BLACK, true, isCache());
@@ -489,12 +494,12 @@ public void updateLayoutVars(double width, double height) {
     }
 
 // Data Memory -> MUX MemToReg
-public void drawDataMemoryToMuxMemToReg(GraphicsContext gc, double width, double height, boolean highlight) {
+public void drawDataMemoryToMuxMemToReg(GraphicsContext gc, boolean highlight) {
     drawRightArrow(gc, dataMemX + dataMemWidth, muxMemToRegY + 0.2 * muxHeight, muxMemToRegX, highlight ? Highlight : BLACK, false);
 }
 
 // MUX MemToReg -> Registers
-public void drawMuxMemToRegToRegisters(GraphicsContext gc, double width, double height, boolean highlight) {
+public void drawMuxMemToRegToRegisters(GraphicsContext gc, boolean highlight) {
     drawHorizontalSegment(gc, muxMemToRegX + muxWidth, muxMemToRegY + 0.5 * muxHeight, muxMemToRegX + muxWidth * 1.8, highlight ? Highlight : BLACK, false, false);
     drawVerticalSegment(gc, muxMemToRegX + muxWidth * 1.8, muxMemToRegY + 0.5 * muxHeight, aluControlY + aluControlHeight * 2, highlight ? Highlight : BLACK, false, false);
     drawHorizontalSegment(gc, muxMemToRegX + muxWidth * 1.8, aluControlY + aluControlHeight * 2, regX - 0.3 * rectWidth, highlight ? Highlight : BLACK, false, false);
@@ -512,19 +517,19 @@ public void drawReg2Loc(GraphicsContext gc, boolean highlight) {
     drawVerticalSegment(gc, muxRegInputX + 0.5*muxWidth, muxRegInputY + muxHeight*1.75, muxRegInputY + muxHeight, color, isDisable(), isCache());
 }
 
-public void drawUncondBranch(GraphicsContext gc, double orGateX, double gateW, boolean highlight) {
+public void drawUncondBranch(GraphicsContext gc, boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, controlX + 0.85*controlWidth, controlY + 0.14*controlHeight, orGateX + 0.1*gateW, color, isDisable(), isCache());
 }
 
-public void drawFlagBranch(GraphicsContext gc, double andGate1X, double gateW, double andGateY, double gateH, boolean highlight) {
+public void drawFlagBranch(GraphicsContext gc, boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, controlX + 0.9*controlWidth, controlY + 0.23*controlHeight, andGate1X - 0.5*gateW, color, isDisable(), isCache());
     drawVerticalSegment(gc, andGate1X - 0.5*gateW, andGateY + 0.2*gateH, controlY + 0.23*controlHeight, color, isDisable(), isCache());
     drawHorizontalSegment(gc, andGate1X - 0.5*gateW, andGateY + 0.2*gateH, andGate1X, color, isDisable(), isCache());
 }
 
-public void drawZeroBranch(GraphicsContext gc, double andGate2X, double gateW, double andGateY, double gateH, boolean highlight) {
+public void drawZeroBranch(GraphicsContext gc,  boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, controlX + 0.95*controlWidth, controlY + 0.32*controlHeight, andGate2X - 0.7*gateW, color, isDisable(), isCache());
     drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.2*gateH, controlY + 0.32*controlHeight, color, isDisable(), isCache());
@@ -577,7 +582,7 @@ public void drawRegWrite(GraphicsContext gc, boolean highlight) {
     drawVerticalSegment(gc, regX + 0.5 *rectWidth, controlY + 0.95*controlHeight, regY, color, isDisable(), isCache());
 }
 
-public void drawFlagToAndGate(GraphicsContext gc, double andGate1X, boolean highlight) {
+public void drawFlagToAndGate(GraphicsContext gc,boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, flagX + 4*flagBoxSize, flagY + 0.5*flagBoxSize, andGate1X , color, isDisable(), isCache());
 }
@@ -588,28 +593,28 @@ public void drawALUToALUControl(GraphicsContext gc, boolean highlight) {
     drawHorizontalSegment(gc, aluX + 0.48*aluWidth, aluControlY + aluControlHeight*0.5, aluControlX + aluControlWidth, color, isDisable(), isCache());
 }
 
-public void drawALUToAndGate(GraphicsContext gc, double andGate2X, double gateW, double andGateY, double gateH, boolean highlight) {
+public void drawALUToAndGate(GraphicsContext gc, boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, aluX + aluWidth, aluY + 0.4 * aluBlockHeight, andGate2X - 0.7*gateW, color, isDisable(), isCache());
     drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, aluY + 0.4 * aluBlockHeight, color, isDisable(), isCache());
     drawHorizontalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, andGate2X, color, isDisable(), isCache());
 }
 
-public void drawAnd1ToOrGate(GraphicsContext gc, double andGate1X, double gateW, double andGateY, double gateH, double andGate2X, double orGateY, double orGateX, boolean highlight) {
+public void drawAnd1ToOrGate(GraphicsContext gc, boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, andGate1X + 0.9*gateW, andGateY + 0.5*gateH, andGate2X - 1.2*gateW, color, isDisable(), isCache());
     drawVerticalSegment(gc, andGate2X - 1.2*gateW, orGateY + 0.65*gateH, andGateY + 0.5*gateH, color, isDisable(), isCache());
     drawHorizontalSegment(gc, andGate2X - 1.2*gateW, orGateY + 0.65*gateH, orGateX + 0.2*gateW, color, isDisable(), isCache());
 }
 
-public void drawAnd2ToOrGate(GraphicsContext gc, double andGate2X, double gateW, double andGateY, double gateH, double orGateX, double orGateY, boolean highlight) {
+public void drawAnd2ToOrGate(GraphicsContext gc, boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, andGate2X + 0.95*gateW, andGateY + 0.5*gateH, orGateX - 0.8*gateW, color, isDisable(), isCache());
     drawVerticalSegment(gc, orGateX - 0.8*gateW, orGateY + 0.95*gateH, andGateY + 0.5*gateH, color, isDisable(), isCache());
     drawHorizontalSegment(gc, orGateX - 0.8*gateW, orGateY + 0.95*gateH, orGateX + 0.1*gateW, color, isDisable(), isCache());
 }
 
-public void drawOrGateToMux(GraphicsContext gc, double orGateX, double gateW, double orGateY, double gateH, boolean highlight) {
+public void drawOrGateToMux(GraphicsContext gc, boolean highlight) {
     Color color = highlight ? HighlightControl : ARM_BLUE;
     drawHorizontalSegment(gc, orGateX + 1.2*gateW, orGateY + 0.6*gateH, muxPcSourceX + 0.5*muxWidth, color, isDisable(), isCache());
     drawVerticalSegment(gc, muxPcSourceX + 0.5*muxWidth, orGateY + 0.6*gateH, muxPcSourceY + muxHeight, color, isDisable(), isCache());
