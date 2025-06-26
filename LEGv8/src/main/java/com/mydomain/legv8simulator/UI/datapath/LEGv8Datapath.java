@@ -290,7 +290,6 @@ public void updateLayoutVars(double width, double height) {
         drawTextBold(gc, "ALU\ncontrol", aluControlX + aluControlWidth / 2, aluControlY + aluControlHeight / 2, BLACK, baseFontSize, TextAlignment.CENTER);
 
         // --- Nhãn cho các cổng (Ports) ---
-        int portFontSize = baseFontSize > 11 ? 11 : baseFontSize; // Giới hạn kích thước font cho cổng
 
         // Instruction Memory Ports
         drawText(gc, "Read \naddress", instrMemX + 0.05 * instrMemWidth, instrMemY + 0.1 * instrMemHeight, BLACK, portFontSize, TextAlignment.LEFT);
