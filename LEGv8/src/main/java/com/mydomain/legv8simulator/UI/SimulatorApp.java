@@ -47,7 +47,6 @@ public class SimulatorApp extends Application {
         
         Button btnStart = new Button("Start Simulation");
         btnStart.setId("start-button");
-        btnStart.setDisable(true); // Vô hiệu hóa cho đến khi file được chọn
 
         Button btnLoad = new Button("Select Assembly File");
         btnLoad.setId("file-button");
@@ -76,9 +75,25 @@ public class SimulatorApp extends Application {
         );
         
         final java.io.File[] selectedFile = {null};
+        java.io.File file = new java.io.File("resources/assembly_examples/example_1.s");
+        if (file != null) {
+                selectedFile[0] = file;
+                simManager.setCurrentFileName(file.getName());
+                fileLabel.setText("Selected: " + file.getName());
+                statusLabel.setText("File loaded. Please edit and assemble in editor.");
+                
+                // Hiển thị cửa sổ chỉnh sửa file và truyền callback với assembler
+                TextFileEditor.show(mainStage, file, (assembledCode, originalLines) -> {
+                    // Callback được gọi khi assemble thành công
+                    simManager.setMachineCode(assembledCode);
+                    simManager.setAssemblyLines(originalLines);
+                    statusLabel.setText("Assembly successful! Ready to simulate.");
+                    btnStart.setDisable(false); // Kích hoạt nút Start
+                }, simManager.getAssembler());
+            }
 
         btnLoad.setOnAction(e -> {
-            java.io.File file = fileChooser.showOpenDialog(mainStage);
+            // java.io.File file = fileChooser.showOpenDialog(mainStage);
             if (file != null) {
                 selectedFile[0] = file;
                 simManager.setCurrentFileName(file.getName());
@@ -93,6 +108,9 @@ public class SimulatorApp extends Application {
                     statusLabel.setText("Assembly successful! Ready to simulate.");
                     btnStart.setDisable(false); // Kích hoạt nút Start
                 }, simManager.getAssembler());
+            }
+            else {
+                showErrorDialog("File Error", "No file selected");
             }
         });
 
@@ -136,6 +154,12 @@ public class SimulatorApp extends Application {
         // Mở cửa sổ datapath visualization
         LEGv8Datapath datapathPane = new LEGv8Datapath();
         Scene scene = new Scene(datapathPane, 1200, 800);
+
+        TextAnimationComponent textAnim = new TextAnimationComponent(datapathPane);
+        textAnim.setText("LEGv8 Datapath Visualization");
+
+        AnimationControllerWindow animController = new AnimationControllerWindow(textAnim);
+        animController.show();
         primaryStage.setTitle("LEGv8 Datapath Visualization");
         primaryStage.setScene(scene);
         primaryStage.show();
