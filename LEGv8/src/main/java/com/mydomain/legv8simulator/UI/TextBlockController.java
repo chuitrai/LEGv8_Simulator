@@ -41,13 +41,13 @@ public class TextBlockController extends StackPane{
     }
     public void simulateFetch() {
         simManager = SimulationManager.getInstance();
-        String adrr = String.format("0x%04X", simManager.getCurrentPC());
+        String adrr = String.format("0x%04X", simManager.getCpu().getPC().getValue());
         MovingTextBlock block1 = new MovingTextBlock(adrr, "#3498db");
         MovingTextBlock block2 = new MovingTextBlock(adrr, "#2ecc71");
 
         // Định nghĩa path: PC -> Instruction Memory -> Control Unit
         List<PathSegment> fetchPath1 = new ArrayList<>();
-        fetchPath1.add(new PathSegment((C1_PC_IM + pcWidth), R_MAIN_PATH, instrMemX, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
+        fetchPath1.add(new PathSegment(C1_PC_IM + pcWidth, R_MAIN_PATH, instrMemX, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
         block1.setPath(fetchPath1);
 
         addAndStartBlock(block1);
@@ -55,11 +55,20 @@ public class TextBlockController extends StackPane{
         // Định nghĩa path: PC -> Instruction Memory -> Control Unit
         List<PathSegment> fetchPath2 = new ArrayList<>();
         fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
+        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, 1.0));   // To Control Unit
         fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, add4X, add4Y + add4Height*0.25, 1.0));  // Instruction Memory to decode
-        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, add4Y + add4Height*0.25,R_MAIN_PATH, 1.0));   // To Control Unit
-
         block2.setPath(fetchPath2);
         addAndStartBlock(block2);
+        simManager.getSimulator().step(1);
+
+        String newAddr = String.format("0x%04X", simManager.getCpu().getPC().getValue() + 4);
+        MovingTextBlock block3 = new MovingTextBlock(newAddr);
+        List<PathSegment> fetchPath3 = new ArrayList<>();
+        fetchPath3.add(new PathSegment(add4X + add4Width, add4Y + 0.5*add4Height, muxPcSourceX, add4Y + 0.5*add4Height, 1.0));  // PC to Instruction Memory
+        block3.setPath(fetchPath3);
+
+        addAndStartBlock(block3);
+
     }
     
     public void simulateDecode() {
@@ -210,12 +219,6 @@ public class TextBlockController extends StackPane{
         datapath.getChildren().add(block);
         activeBlocks.add(block);
         block.startMoving();
-        
-        // Auto remove sau khi hoàn thành path
-        Timeline autoRemove = new Timeline(new KeyFrame(Duration.seconds(15), e -> {
-            removeBlock(block);
-        }));
-        autoRemove.play();
     }
     
     private void removeBlock(MovingTextBlock block) {

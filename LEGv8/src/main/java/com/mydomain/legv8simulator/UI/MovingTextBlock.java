@@ -79,6 +79,9 @@ public class MovingTextBlock extends StackPane {
         
         getChildren().addAll(background, text);
     }
+    public MovingTextBlock(String content) {
+        this(content, "#0078D7"); // Màu mặc định
+    }
     
     private void updateSize() {
         double textWidth = text.getBoundsInLocal().getWidth();
@@ -121,51 +124,39 @@ public class MovingTextBlock extends StackPane {
         PathSegment firstSegment = path.get(0);
         setLayoutX(firstSegment.start.x);
         setLayoutY(firstSegment.start.y);
-        
         moveToNextSegment();
     }
     
-    private void moveToNextSegment() {
-        if (currentSegmentIndex >= path.size()) {
-            onPathCompleted();
-            return;
-        }
-        
-        PathSegment segment = path.get(currentSegmentIndex);
-        
-        // Tạo animation cho đoạn hiện tại
-        TranslateTransition move = new TranslateTransition(Duration.seconds(segment.duration), this);
-        
-        // Tính toán vị trí relative từ vị trí hiện tại
-        double currentX = getLayoutX() + getTranslateX();
-        double currentY = getLayoutY() + getTranslateY();
-        
-        move.setToX(getTranslateX() + (segment.end.x - currentX));
-        move.setToY(getTranslateY() + (segment.end.y - currentY));
-        
-        move.setOnFinished(e -> {
-            // Cập nhật vị trí thực tế
-            setLayoutX(segment.end.x);
-            setLayoutY(segment.end.y);
-            setTranslateX(0);
-            setTranslateY(0);
-            
-            currentSegmentIndex++;
-            
-            // Pause nhỏ giữa các đoạn (tùy chọn)
-            Timeline pause = new Timeline(new KeyFrame(Duration.seconds(0.1), event -> {
-                moveToNextSegment();
-            }));
-            pause.play();
-        });
-        
-        currentAnimation = new Timeline();
-        currentAnimation.getKeyFrames().add(new KeyFrame(Duration.seconds(segment.duration), 
-            new KeyValue(this.translateXProperty(), move.getToX()),
-            new KeyValue(this.translateYProperty(), move.getToY())
-        ));
-        currentAnimation.play();
+private void moveToNextSegment() {
+    if (currentSegmentIndex >= path.size()) {
+        onPathCompleted();
+        return;
     }
+
+    PathSegment segment = path.get(currentSegmentIndex);
+
+    // Tính toán vị trí relative từ vị trí hiện tại
+    double currentX = getLayoutX() + getTranslateX();
+    double currentY = getLayoutY() + getTranslateY();
+    double toX = getTranslateX() + (segment.end.x - currentX);
+    double toY = getTranslateY() + (segment.end.y - currentY);
+
+    currentAnimation = new Timeline();
+    currentAnimation.getKeyFrames().add(new KeyFrame(Duration.seconds(segment.duration),
+        new KeyValue(this.translateXProperty(), toX),
+        new KeyValue(this.translateYProperty(), toY)
+    ));
+    currentAnimation.setOnFinished(e -> {
+        setLayoutX(segment.end.x);
+        setLayoutY(segment.end.y);
+        setTranslateX(0);
+        setTranslateY(0);
+        currentSegmentIndex++;
+        Timeline pause = new Timeline(new KeyFrame(Duration.seconds(0.1), event -> moveToNextSegment()));
+        pause.play();
+    });
+    currentAnimation.play();
+}
     
     // Được gọi khi hoàn thành toàn bộ path
     protected void onPathCompleted() {
