@@ -1,18 +1,12 @@
 package main.java.com.mydomain.legv8simulator.UI;
 
 import javafx.animation.AnimationTimer;
-import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
-import javafx.animation.ParallelTransition;
-import javafx.animation.ScaleTransition;
-import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
 import javafx.beans.property.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -491,169 +485,6 @@ public class TextAnimationComponent {
             drawPath();
         }
     }
-
-    // Thêm vào trong class TextAnimationComponent
-
-    // ...existing code...
-
-    /**
-     * Khối text có nền, dùng cho morph/fade transform
-     */
-    private static class TextBlock extends StackPane {
-        private javafx.scene.shape.Rectangle background;
-        private Label text;
-
-        public TextBlock(String content, Color bgColor, double x, double y) {
-            background = new javafx.scene.shape.Rectangle();
-            background.setFill(bgColor);
-            background.setArcWidth(10);
-            background.setArcHeight(10);
-            background.setStroke(Color.WHITE);
-            background.setStrokeWidth(2);
-
-            text = new Label(content);
-            text.setTextFill(Color.WHITE);
-            text.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-
-            // Tính toán kích thước nền dựa trên text
-            text.applyCss();
-            double textWidth = text.prefWidth(-1);
-            double textHeight = text.prefHeight(-1);
-            background.setWidth(textWidth + 20);
-            background.setHeight(textHeight + 16);
-
-            getChildren().addAll(background, text);
-            setLayoutX(x);
-            setLayoutY(y);
-
-            setOnMouseEntered(e -> {
-                ScaleTransition hover = new ScaleTransition(Duration.seconds(0.1), this);
-                hover.setToX(1.1);
-                hover.setToY(1.1);
-                hover.play();
-            });
-
-            setOnMouseExited(e -> {
-                ScaleTransition normal = new ScaleTransition(Duration.seconds(0.1), this);
-                normal.setToX(1.0);
-                normal.setToY(1.0);
-                normal.play();
-            });
-        }
-    }
-
-// ...existing code...
-/**
- * Morph Transform - Khối biến hình từ từ
- */
-public void morphTransform() {
-    targetPane.getChildren().clear();
-
-    TextBlock originalBlock = new TextBlock("REGISTER", Color.web("#e17055"), 50, 180);
-    targetPane.getChildren().add(originalBlock);
-
-    TranslateTransition move = new TranslateTransition(Duration.seconds(2), originalBlock);
-    move.setToX(200);
-
-    move.setOnFinished(e -> {
-        List<String> targetTexts = List.of("R1", "R2", "R3");
-        List<Color> targetColors = List.of(Color.web("#00b894"), Color.web("#0984e3"), Color.web("#a29bfe"));
-
-        Timeline morphTimeline = new Timeline();
-
-        for (int i = 0; i < targetTexts.size(); i++) {
-            final int index = i;
-
-            KeyFrame frame = new KeyFrame(Duration.seconds(i * 0.8), event -> {
-                TextBlock newBlock = new TextBlock(targetTexts.get(index), targetColors.get(index),
-                        250, 130 + (index * 50));
-                newBlock.setScaleX(0);
-                newBlock.setScaleY(0);
-                targetPane.getChildren().add(newBlock);
-
-                ScaleTransition appear = new ScaleTransition(Duration.seconds(0.5), newBlock);
-                appear.setToX(1);
-                appear.setToY(1);
-
-                ScaleTransition pulse = new ScaleTransition(Duration.seconds(0.3), newBlock);
-                pulse.setToX(1.2);
-                pulse.setToY(1.2);
-                pulse.setAutoReverse(true);
-                pulse.setCycleCount(2);
-
-                SequentialTransition newBlockAnim = new SequentialTransition(appear, pulse);
-                newBlockAnim.play();
-
-                if (index == 0) {
-                    FadeTransition fadeOriginal = new FadeTransition(Duration.seconds(0.5), originalBlock);
-                    fadeOriginal.setToValue(0);
-                    fadeOriginal.play();
-                }
-            });
-
-            morphTimeline.getKeyFrames().add(frame);
-        }
-
-        morphTimeline.play();
-    });
-
-    move.play();
-}
-
-/**
- * Fade Transform - Khối mờ dần và xuất hiện khối mới
- */
-public void fadeTransform() {
-    targetPane.getChildren().clear();
-
-    TextBlock originalBlock = new TextBlock("MEMORY", Color.web("#6c5ce7"), 50, 180);
-    targetPane.getChildren().add(originalBlock);
-
-    TranslateTransition move = new TranslateTransition(Duration.seconds(2), originalBlock);
-    move.setToX(250);
-
-    move.setOnFinished(e -> {
-        FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), originalBlock);
-        fadeOut.setToValue(0);
-
-        fadeOut.setOnFinished(fadeEvent -> {
-            List<TextBlock> newBlocks = new ArrayList<>();
-            newBlocks.add(new TextBlock("ADDR", Color.web("#ff7675"), 300, 130));
-            newBlocks.add(new TextBlock("DATA", Color.web("#74b9ff"), 300, 180));
-            newBlocks.add(new TextBlock("CTRL", Color.web("#55a3ff"), 300, 230));
-
-            for (TextBlock block : newBlocks) {
-                block.setOpacity(0);
-                targetPane.getChildren().add(block);
-            }
-
-            Timeline fadeInSequence = new Timeline();
-
-            for (int i = 0; i < newBlocks.size(); i++) {
-                final int index = i;
-                KeyFrame frame = new KeyFrame(Duration.seconds(i * 0.5), event -> {
-                    FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.8), newBlocks.get(index));
-                    fadeIn.setToValue(1);
-
-                    TranslateTransition slide = new TranslateTransition(Duration.seconds(0.8), newBlocks.get(index));
-                    slide.setFromX(-50);
-                    slide.setToX(0);
-
-                    ParallelTransition appear = new ParallelTransition(fadeIn, slide);
-                    appear.play();
-                });
-
-                fadeInSequence.getKeyFrames().add(frame);
-            }
-
-            fadeInSequence.play();
-        });
-
-        fadeOut.play();
-    });
-
-    move.play();
-}
     
     public boolean isShowPath() { return showPath; }
     public boolean isShowPoints() { return showPoints; }

@@ -55,8 +55,9 @@ public class AnimationControllerWindow {
         // Tạo các panel
         HBox controlPanel = createControlPanel();
         HBox statusBar = createStatusBar();
+        VBox inputPanel = createInputPanel();
         
-        root.getChildren().addAll(controlPanel, statusBar);
+        root.getChildren().addAll(controlPanel, statusBar, inputPanel);
         
         Scene scene = new Scene(new ScrollPane(root), 500, 600);
         stage.setScene(scene);
@@ -99,11 +100,11 @@ public class AnimationControllerWindow {
         VBox buttonBox = new VBox(10);
         
         HBox mainButtons = new HBox(10);
-        playBtn = new Button("▶ Run");
+        playBtn = new Button("▶ Chạy");
         playBtn.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;");
         playBtn.setPrefWidth(80);
-
-        pauseBtn = new Button("⏸ Pause");
+        
+        pauseBtn = new Button("⏸ Dừng");
         pauseBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;");
         pauseBtn.setPrefWidth(80);
         
@@ -117,15 +118,18 @@ public class AnimationControllerWindow {
         HBox stepControls = new HBox(10);
         stepControls.setAlignment(Pos.CENTER_LEFT);
         
-        stepBtn = new Button("👣 Next Step");
+        stepBtn = new Button("👣 Bước tiếp");
         stepBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;");
         stepBtn.setPrefWidth(120);
         
+        Label stepSizeLabel = new Label("Bước/lần:");
+        stepSizeLabel.setTextFill(Color.WHITE);
+        stepSizeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
         
         stepSizeSpinner = new Spinner<>(1, 10, 1);
         stepSizeSpinner.setPrefWidth(70);
         
-        stepControls.getChildren().addAll(stepBtn, stepSizeSpinner);
+        stepControls.getChildren().addAll(stepBtn, stepSizeLabel, stepSizeSpinner);
         
         buttonBox.getChildren().addAll(mainButtons, stepControls);
         
@@ -140,7 +144,117 @@ public class AnimationControllerWindow {
         statusBar.setStyle("-fx-background-color: #34495e; -fx-background-radius: 8;");
         statusBar.setAlignment(Pos.CENTER_LEFT);
         
+        VBox statusBox = new VBox(5);
+        statusLabel = new Label("Trạng thái: Đã dừng");
+        statusLabel.setTextFill(Color.WHITE);
+        statusLabel.setFont(Font.font("Consolas", FontWeight.BOLD, 12));
+        
+        currentPointLabel = new Label("Điểm hiện tại: 0/0");
+        currentPointLabel.setTextFill(Color.web("#95a5a6"));
+        currentPointLabel.setFont(Font.font("Consolas", 11));
+        
+        progressLabel = new Label("Tiến độ: 0%");
+        progressLabel.setTextFill(Color.web("#95a5a6"));
+        progressLabel.setFont(Font.font("Consolas", 11));
+        
+        statusBox.getChildren().addAll(statusLabel, currentPointLabel, progressLabel);
+        statusBar.getChildren().add(statusBox);
+        
         return statusBar;
+    }
+    
+    private VBox createInputPanel() {
+        VBox panel = new VBox(15);
+        panel.setPadding(new Insets(15));
+        panel.setStyle("-fx-background-color: white; -fx-border-color: #ecf0f1; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;");
+        
+        // Text input section
+        VBox textSection = new VBox(8);
+        Label textLabel = new Label("📝 Nội dung hiển thị:");
+        textLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        
+        textInput = new TextField("HELLO WORLD!");
+        textInput.setPromptText("Nhập text để hiển thị...");
+        
+        textSection.getChildren().addAll(textLabel, textInput);
+        
+        // Style controls section
+        VBox styleSection = new VBox(10);
+        Label styleLabel = new Label("🎨 Tùy chỉnh giao diện:");
+        styleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        
+        // Color controls
+        HBox colorControls = new HBox(20);
+        colorControls.setAlignment(Pos.CENTER_LEFT);
+        
+        VBox bgColorBox = new VBox(5);
+        bgColorBox.getChildren().addAll(
+            new Label("Màu nền:"), 
+            bgColorPicker = new ColorPicker(Color.web("#3498db"))
+        );
+        
+        VBox textColorBox = new VBox(5);
+        textColorBox.getChildren().addAll(
+            new Label("Màu chữ:"), 
+            textColorPicker = new ColorPicker(Color.WHITE)
+        );
+        
+        colorControls.getChildren().addAll(bgColorBox, textColorBox);
+        
+        // Size controls
+        HBox sizeControls = new HBox(20);
+        sizeControls.setAlignment(Pos.CENTER_LEFT);
+        
+        VBox fontSizeBox = new VBox(5);
+        fontSizeSlider = new Slider(12, 32, 18);
+        fontSizeSlider.setPrefWidth(120);
+        fontSizeSlider.setShowTickMarks(true);
+        fontSizeSlider.setMajorTickUnit(5);
+        fontSizeValue = new Label("18px");
+        
+        HBox fontSizeControls = new HBox(10);
+        fontSizeControls.getChildren().addAll(fontSizeSlider, fontSizeValue);
+        fontSizeBox.getChildren().addAll(new Label("Kích thước chữ:"), fontSizeControls);
+        
+        VBox borderRadiusBox = new VBox(5);
+        borderRadiusSlider = new Slider(0, 20, 8);
+        borderRadiusSlider.setPrefWidth(120);
+        borderRadiusSlider.setShowTickMarks(true);
+        borderRadiusSlider.setMajorTickUnit(5);
+        borderRadiusValue = new Label("8px");
+        
+        HBox borderControls = new HBox(10);
+        borderControls.getChildren().addAll(borderRadiusSlider, borderRadiusValue);
+        borderRadiusBox.getChildren().addAll(new Label("Bo góc:"), borderControls);
+        
+        sizeControls.getChildren().addAll(fontSizeBox, borderRadiusBox);
+        
+        styleSection.getChildren().addAll(styleLabel, colorControls, sizeControls);
+        
+        // Display options
+        HBox displayOptions = new HBox(20);
+        showPathCheckBox = new CheckBox("Hiển thị đường đi");
+        showPathCheckBox.setSelected(true);
+        
+        showPointsCheckBox = new CheckBox("Hiển thị các điểm");
+        showPointsCheckBox.setSelected(true);
+        
+        displayOptions.getChildren().addAll(showPathCheckBox, showPointsCheckBox);
+        
+        // Coordinates input section
+        VBox coordSection = new VBox(8);
+        Label coordLabel = new Label("📍 Tọa độ các điểm (x,y mỗi dòng):");
+        coordLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        
+        coordinatesInput = new TextArea();
+        coordinatesInput.setPrefRowCount(8);
+        coordinatesInput.setText("100,100\n200,150\n300,200\n400,100\n500,300\n200,400\n100,350\n50,200");
+        coordinatesInput.setPromptText("Nhập tọa độ theo định dạng: x,y");
+        
+                coordSection.getChildren().addAll(coordLabel, coordinatesInput);
+
+        panel.getChildren().addAll(textSection, styleSection, displayOptions, coordSection);
+        return panel;
     }
 
     private void bindProperties() {
@@ -158,11 +272,59 @@ public class AnimationControllerWindow {
     resetBtn.setOnAction(e -> animationComponent.reset());
     stepBtn.setOnAction(e -> animationComponent.step());
 
+    // Step size
+    stepSizeSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.stepSizeProperty().set(newVal);
+    });
+
+    // Text input
+    textInput.textProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.setText(newVal);
+    });
+
     // Coordinates input
     coordinatesInput.textProperty().addListener((obs, oldVal, newVal) -> {
         animationComponent.setPoints(newVal);
     });
 
+    // Color pickers
+    bgColorPicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.backgroundColorProperty().set(newVal);
+    });
+    textColorPicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.textColorProperty().set(newVal);
+    });
+
+    // Font size
+    fontSizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.fontSizeProperty().set(newVal.intValue());
+        fontSizeValue.setText(newVal.intValue() + "px");
+    });
+
+    // Border radius
+    borderRadiusSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.borderRadiusProperty().set(newVal.intValue());
+        borderRadiusValue.setText(newVal.intValue() + "px");
+    });
+
+    // Display options
+    showPathCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.setShowPath(newVal);
+    });
+    showPointsCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+        animationComponent.setShowPoints(newVal);
+    });
+
+    // Trạng thái animation cập nhật lên status bar
+    animationComponent.statusProperty().addListener((obs, oldVal, newVal) -> {
+        statusLabel.setText("Trạng thái: " + newVal);
+    });
+    animationComponent.currentIndexProperty().addListener((obs, oldVal, newVal) -> {
+        currentPointLabel.setText("Điểm hiện tại: " + newVal + "/" + animationComponent.getPointCount());
+    });
+    animationComponent.progressProperty().addListener((obs, oldVal, newVal) -> {
+        progressLabel.setText("Tiến độ: " + String.format("%.0f", newVal.doubleValue()) + "%");
+    });
 }
 
     private void handleWindowClose(WindowEvent event) {

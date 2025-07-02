@@ -157,8 +157,9 @@ public void updateLayoutVars(double width, double height) {
 
     public LEGv8Datapath() {
         setupDatapathComponents();
-        setupAnimationPaths();
-        initializeAnimations();
+        
+        // setupAnimationPaths();
+        // initializeAnimations();
     }
     private void setupDatapathComponents() {
         canvas = new Canvas(); 
