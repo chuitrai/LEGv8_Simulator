@@ -13,7 +13,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import main.java.com.mydomain.legv8simulator.UI.datapath.LEGv8Datapath;
-import main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
+import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 import java.nio.file.Path;
@@ -48,18 +48,15 @@ public class TextBlockController extends StackPane{
         // Định nghĩa path: PC -> Instruction Memory -> Control Unit
         List<PathSegment> fetchPath1 = new ArrayList<>();
         fetchPath1.add(new PathSegment((C1_PC_IM + pcWidth), R_MAIN_PATH, instrMemX, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
-        fetchPath1.add(new PathSegment(200, 130, 260, 130, 1.0));  // Instruction Memory to decode
-        fetchPath1.add(new PathSegment(260, 130, 470, 90, 1.0));   // To Control Unit
-
         block1.setPath(fetchPath1);
 
         addAndStartBlock(block1);
 
         // Định nghĩa path: PC -> Instruction Memory -> Control Unit
         List<PathSegment> fetchPath2 = new ArrayList<>();
-        fetchPath2.add(new PathSegment(100, 130, 200, 130, 1.0));  // PC to Instruction Memory
-        fetchPath2.add(new PathSegment(200, 130, 260, 130, 1.0));  // Instruction Memory to decode
-        fetchPath2.add(new PathSegment(260, 130, 470, 90, 1.0));   // To Control Unit
+        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
+        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, add4X, add4Y + add4Height*0.25, 1.0));  // Instruction Memory to decode
+        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, add4Y + add4Height*0.25,R_MAIN_PATH, 1.0));   // To Control Unit
 
         block2.setPath(fetchPath2);
         addAndStartBlock(block2);
