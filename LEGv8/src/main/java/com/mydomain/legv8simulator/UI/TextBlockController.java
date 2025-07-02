@@ -15,10 +15,14 @@ import javafx.util.Duration;
 import main.java.com.mydomain.legv8simulator.UI.datapath.LEGv8Datapath;
 import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
+import main.java.com.mydomain.legv8simulator.utils.BitUtils;
+import main.java.com.mydomain.legv8simulator.gui.DatapathSnapshot;
+import main.java.com.mydomain.legv8simulator.instruction.*;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+
 import main.java.com.mydomain.legv8simulator.UI.MovingTextBlock.*;
 
 
@@ -26,8 +30,7 @@ import main.java.com.mydomain.legv8simulator.UI.MovingTextBlock.*;
 public class TextBlockController extends StackPane{
     private LEGv8Datapath datapath;
     private List<MovingTextBlock> activeBlocks;
-    public static SimulationManager simManager;
-
+    private SimulationManager simManager;
     
     public TextBlockController(LEGv8Datapath datapath) {
         this.datapath = datapath;
@@ -41,61 +44,104 @@ public class TextBlockController extends StackPane{
     }
     public void simulateFetch() {
         simManager = SimulationManager.getInstance();
+        simManager.stepSimulation(1); 
+        simManager = SimulationManager.getInstance();
+        drawPCToAdd4(datapath.gc, true);
+        drawPCToInstructionMemory(datapath.gc, true);
         String adrr = String.format("0x%04X", simManager.getCpu().getPC().getValue());
         MovingTextBlock block1 = new MovingTextBlock(adrr, "#3498db");
         MovingTextBlock block2 = new MovingTextBlock(adrr, "#2ecc71");
 
         // Định nghĩa path: PC -> Instruction Memory -> Control Unit
         List<PathSegment> fetchPath1 = new ArrayList<>();
-        fetchPath1.add(new PathSegment(C1_PC_IM + pcWidth, R_MAIN_PATH, instrMemX, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
+        fetchPath1.add(new PathSegment(C1_PC_IM + pcWidth, R_MAIN_PATH, instrMemX - block1.getWidth(), R_MAIN_PATH, 1.0));  // PC to Instruction Memory
         block1.setPath(fetchPath1);
 
         addAndStartBlock(block1);
+
 
         // Định nghĩa path: PC -> Instruction Memory -> Control Unit
         List<PathSegment> fetchPath2 = new ArrayList<>();
         fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, 1.0));  // PC to Instruction Memory
         fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, R_MAIN_PATH, C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, 1.0));   // To Control Unit
-        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, add4X, add4Y + add4Height*0.25, 1.0));  // Instruction Memory to decode
+        fetchPath2.add(new PathSegment(C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25, add4X - block2.getWidth(), add4Y + add4Height*0.25, 1.0));  // Instruction Memory to decode
         block2.setPath(fetchPath2);
+
+        // Gắn callback khi block2 kết thúc
+        block2.setOnPathCompleted(() -> {
+            MovingTextBlock pcBlock = new MovingTextBlock(String.format("0x%04X", 4));
+            PathSegment pcSegment = new PathSegment(C1_PC_IM + pcWidth*3, R_BRANCH_LOGIC*0.85, add4X - pcBlock.getWidth(), R_BRANCH_LOGIC*0.85, 1.0);
+            pcBlock.setPath(List.of(pcSegment));
+            drawAdd4(datapath.gc, true);
+            pcBlock.setOnPathCompleted(() -> {
+                String newAddr = String.format("0x%04X", simManager.getCpu().getPC().getValue());
+                MovingTextBlock block3 = new MovingTextBlock(newAddr);
+                List<PathSegment> fetchPath3 = new ArrayList<>();
+                fetchPath3.add(new PathSegment(add4X + add4Width, add4Y + 0.5*add4Height, muxPcSourceX - block3.getWidth(), add4Y + 0.5*add4Height, 1.0));
+                block3.setPath(fetchPath3);
+                addAndStartBlock(block3);
+            });
+            drawAdd4ToMux(datapath.gc, true);
+            addAndStartBlock(pcBlock);
+           
+        });
         addAndStartBlock(block2);
-        simManager.getSimulator().step(1);
-
-        String newAddr = String.format("0x%04X", simManager.getCpu().getPC().getValue() + 4);
-        MovingTextBlock block3 = new MovingTextBlock(newAddr);
-        List<PathSegment> fetchPath3 = new ArrayList<>();
-        fetchPath3.add(new PathSegment(add4X + add4Width, add4Y + 0.5*add4Height, muxPcSourceX, add4Y + 0.5*add4Height, 1.0));  // PC to Instruction Memory
-        block3.setPath(fetchPath3);
-
-        addAndStartBlock(block3);
-
     }
-    
     public void simulateDecode() {
-        MovingTextBlock opcode = new MovingTextBlock("ADD", "#e74c3c");
-        MovingTextBlock reg1 = new MovingTextBlock("X1", "#f39c12");
-        MovingTextBlock reg2 = new MovingTextBlock("X2", "#f39c12");
-        
-        // Opcode path: Control Unit -> ALU Control
-        List<PathSegment> opcodePath = new ArrayList<>();
-        opcodePath.add(new PathSegment(470, 90, 470, 150, 0.8));
-        opcodePath.add(new PathSegment(470, 150, 600, 200, 1.0));
-        opcode.setPath(opcodePath);
-        
-        // Register paths: Instruction -> Register File
-        List<PathSegment> regPath1 = new ArrayList<>();
-        regPath1.add(new PathSegment(260, 130, 220, 300, 1.0));
-        regPath1.add(new PathSegment(220, 300, 220, 350, 0.5));
-        reg1.setPath(regPath1);
-        
-        List<PathSegment> regPath2 = new ArrayList<>();
-        regPath2.add(new PathSegment(260, 130, 220, 300, 1.2));
-        regPath2.add(new PathSegment(220, 300, 220, 380, 0.5));
-        reg2.setPath(regPath2);
-        
-        addAndStartBlock(opcode);
-        addAndStartBlock(reg1);
-        addAndStartBlock(reg2);
+        simManager = SimulationManager.getInstance();
+        // DatapathSnapshot snapshot = simManager.getSimulator().createSnapshot();
+        // Instruction instr = snapshot.id_ex_latch.instruction;
+        MovingTextBlock instruction = new MovingTextBlock(BitUtils.toBinaryString32(24));
+        MovingTextBlock opcode = new MovingTextBlock("instr.getOpcodeMnemonic()");
+        MovingTextBlock rn = new MovingTextBlock(BitUtils.toBinaryString(24,5,9));
+        MovingTextBlock imm = new MovingTextBlock(BitUtils.toBinaryString32(24));
+        MovingTextBlock rd = new MovingTextBlock(BitUtils.toBinaryString(24,0,4));
+        MovingTextBlock rt = new MovingTextBlock(BitUtils.toBinaryString(24,0,4));
+        MovingTextBlock rm = new MovingTextBlock(BitUtils.toBinaryString(24,16,20));
+        drawInstrToControl(datapath.gc, true);
+        drawInstrToRegRead1(datapath.gc, true);
+        drawInstrToMuxReg0(datapath.gc, true);
+        drawInstrToMuxReg1(datapath.gc, true);
+        drawInstrToRegWrite(datapath.gc, true);
+        drawInstrToSignExtend(datapath.gc, true);
+        PathSegment instrPath = new PathSegment(instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth - instruction.getWidth(), R_MAIN_PATH + 0.07 * height);
+        instruction.setPath(List.of(instrPath));
+
+        instruction.setOnPathCompleted(() -> {
+            List<PathSegment> opcodePath = new ArrayList<>();
+            opcodePath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, instrMemX + instrMemWidth + 0.8*pcWidth, controlY + 0.5 *controlHeight));
+            opcodePath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, controlY + 0.5 *controlHeight, C2_CONTROL - opcode.getWidth(), controlY + 0.5 *controlHeight)); 
+            opcode.setPath(opcodePath);
+            addAndStartBlock(opcode);
+
+            List<PathSegment> rnPath = new ArrayList<>();
+            rnPath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.1 * regHeight, C3_REGISTERS - rn.getWidth(),  regY + 0.1 * regHeight));
+            rn.setPath(rnPath);
+            addAndStartBlock(rn);
+
+            List<PathSegment> rmPath = new ArrayList<>();
+            rmPath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, muxRegInputY + 0.15 * muxHeight, C2_CONTROL - 0.02*width - rm.getWidth(), muxRegInputY + 0.15 * muxHeight));
+            rm.setPath(rmPath);
+            addAndStartBlock(rm);
+
+            List<PathSegment> rtPath = new ArrayList<>();
+            rtPath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 * regHeight, C3_REGISTERS - rt.getWidth(),regY + 0.7 * regHeight));
+            rt.setPath(rtPath);
+            addAndStartBlock(rt);
+
+            List<PathSegment> rdPath = new ArrayList<>();
+            rdPath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 *regHeight, C2_CONTROL - 0.05*width, regY + 0.7 *regHeight));
+            rdPath.add(new PathSegment(C2_CONTROL - 0.05*width, regY + 0.7 *regHeight, C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight));
+            rdPath.add(new PathSegment(C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight, muxRegInputX - rd.getWidth(),muxRegInputY + 0.8*muxHeight));
+            rd.setPath(rdPath);
+            addAndStartBlock(rd);
+            
+            List<PathSegment> immPath = new ArrayList<>();
+            immPath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, signExtendY + 0.5*ellipseHeight, signExtendX - imm.getWidth(), signExtendY + 0.5*ellipseHeight)); // Shift Left 2 to Add Branch
+            imm.setPath(immPath);
+            addAndStartBlock(imm);
+        });
+        addAndStartBlock(instruction);
     }
     
     public void simulateExecute() {
@@ -166,55 +212,6 @@ public class TextBlockController extends StackPane{
         addAndStartBlock(result);
     }
     
-    public void simulatePipeline() {
-        clearAllBlocks();
-        
-        // Simulate pipeline với nhiều instructions
-        String[] instructions = {"ADD X1,X2,X3", "SUB X4,X5,X6", "LD X7,[X8]", "ST X9,[X10]"};
-        String[] colors = {"#3498db", "#e74c3c", "#27ae60", "#9b59b6"};
-        
-        for (int i = 0; i < instructions.length; i++) {
-            final int index = i;
-            Timeline delay = new Timeline(new KeyFrame(Duration.seconds(i * 0.8), e -> {
-                MovingTextBlock inst = new MovingTextBlock(instructions[index], colors[index]);
-                
-                // Pipeline path: PC -> IM -> Decode -> Execute -> Memory -> Writeback
-                List<PathSegment> pipelinePath = new ArrayList<>();
-                pipelinePath.add(new PathSegment(100, 130 + index * 30, 200, 130 + index * 30, 1.0));
-                pipelinePath.add(new PathSegment(200, 130 + index * 30, 350, 200 + index * 20, 1.0));
-                pipelinePath.add(new PathSegment(350, 200 + index * 20, 600, 280 + index * 15, 1.0));
-                pipelinePath.add(new PathSegment(600, 280 + index * 15, 750, 280 + index * 15, 1.0));
-                pipelinePath.add(new PathSegment(750, 280 + index * 15, 220, 350 + index * 10, 1.5));
-                
-                inst.setPath(pipelinePath);
-                addAndStartBlock(inst);
-            }));
-            delay.play();
-        }
-    }
-    
-    public void simulateComplexPath() {
-        MovingTextBlock block = new MovingTextBlock("Complex Path", "#e67e22");
-        
-        // Đường đi phức tạp qua nhiều components
-        List<PathSegment> complexPath = new ArrayList<>();
-        complexPath.add(new PathSegment(100, 130, 200, 130, 1.0));    // PC to IM
-        complexPath.add(new PathSegment(200, 130, 470, 90, 1.0));     // IM to Control
-        complexPath.add(new PathSegment(470, 90, 470, 200, 0.8));     // Control down
-        complexPath.add(new PathSegment(470, 200, 350, 230, 0.8));    // Control to MUX
-        complexPath.add(new PathSegment(350, 230, 220, 300, 1.0));    // MUX to Register
-        complexPath.add(new PathSegment(220, 300, 220, 380, 0.5));    // Register move
-        complexPath.add(new PathSegment(220, 380, 350, 230, 1.0));    // Register to MUX
-        complexPath.add(new PathSegment(350, 230, 600, 320, 1.2));    // MUX to ALU
-        complexPath.add(new PathSegment(600, 320, 750, 300, 1.0));    // ALU to Memory
-        complexPath.add(new PathSegment(750, 300, 820, 290, 0.8));    // Memory access
-        complexPath.add(new PathSegment(820, 290, 500, 380, 1.5));    // Memory to MUX
-        complexPath.add(new PathSegment(500, 380, 290, 380, 1.0));    // MUX to Register
-        
-        block.setPath(complexPath);
-        addAndStartBlock(block);
-    }
-    
     private void addAndStartBlock(MovingTextBlock block) {
         datapath.getChildren().add(block);
         activeBlocks.add(block);
@@ -266,4 +263,5 @@ public class TextBlockController extends StackPane{
             block.step(stepDuration);
         }
     }
+
 }

@@ -13,16 +13,10 @@ import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-
-
 public class LEGv8Datapath extends Pane {
 
-    private Canvas canvas;
-    private GraphicsContext gc;
+    public Canvas canvas;
+    public GraphicsContext gc;
     private Label pcLabel, imLabel, rfLabel, aluLabel, dmLabel;
     
     // Predefined paths cho các loại instruction
@@ -263,7 +257,7 @@ public void updateLayoutVars(double width, double height) {
         drawFlagBranch(gc, false);
         drawZeroBranch(gc, false);
         drawMemRead(gc, false);
-        drawMemToReg(gc, false);
+        drawMemToReg(gc, true);
         drawMemWrite(gc, false);
         drawFlagWrite(gc, false);
         drawALUSrc(gc, false);

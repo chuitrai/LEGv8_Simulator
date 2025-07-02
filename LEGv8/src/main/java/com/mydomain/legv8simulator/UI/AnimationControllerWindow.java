@@ -14,6 +14,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import main.java.com.mydomain.legv8simulator.UI.MovingTextBlock;
+import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 /**
  * Cửa sổ điều khiển mô phỏng, bao gồm cả việc kích hoạt các giai đoạn
@@ -24,6 +25,7 @@ public class AnimationControllerWindow {
     private Stage stage;
     private TextBlockController textBlockController;
     private boolean isPaused = false;
+    private SimulationManager simManager;
 
     // UI Controls - Global
     private Button playBtn, playPauseBtn, stepBtn, resetBtn;
@@ -197,8 +199,6 @@ public class AnimationControllerWindow {
         executeBtn.setOnAction(e -> runSimulation(textBlockController::simulateExecute, "Đang mô phỏng EXECUTE..."));
         memoryBtn.setOnAction(e -> runSimulation(textBlockController::simulateMemoryAccess, "Đang mô phỏng MEMORY..."));
         writebackBtn.setOnAction(e -> runSimulation(textBlockController::simulateWriteback, "Đang mô phỏng WRITEBACK..."));
-        pipelineBtn.setOnAction(e -> runSimulation(textBlockController::simulatePipeline, "Đang mô phỏng PIPELINE..."));
-        complexBtn.setOnAction(e -> runSimulation(textBlockController::simulateComplexPath, "Đang mô phỏng COMPLEX PATH..."));
     }
     
     private void togglePlayPause() {
@@ -217,9 +217,9 @@ public class AnimationControllerWindow {
         isPaused = false;
         textBlockController.simulateFetch();
         textBlockController.simulateDecode();
-        textBlockController.simulateExecute();
-        textBlockController.simulateMemoryAccess();
-        textBlockController.simulateWriteback();
+        // textBlockController.simulateExecute();
+        // textBlockController.simulateMemoryAccess();
+        // textBlockController.simulateWriteback();
         updateStatus("Đang chạy mô phỏng...");
         updatePlayPauseButtonState();
     }

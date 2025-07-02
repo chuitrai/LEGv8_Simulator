@@ -171,7 +171,7 @@ public class SimulatorApp extends Application {
     private void runSimulation() {
         try {
             // Chạy simulation với số bước giới hạn
-            if (simManager.runSimulation(100)) {
+            if (simManager.runSimulation(1)) {
                 System.out.println("Simulation completed successfully!");
             } else {
                 showErrorDialog("Simulation Error", "Failed to run simulation");

@@ -60,10 +60,10 @@ public final class DatapathGraphicsFX {
     public static final Color muxBorderColor = Color.web("#1C2B2B");
     public static final Color muxFillColor = Color.web("#E6E6FA");
 
-    public static final Color Highlight = Color.ROSYBROWN;
-    public static final Color HighlightControl = Color.web("#FFB6C1");
+    public static final Color Highlight = Color.web("#FF1744");
+    public static final Color HighlightControl = Color.web("#00E676");
 
-    public static final Color HighlightBorder = Color.web("#ffb997"); // Màu nhạt hơn cho các tín hiệu điều khiển
+    public static final Color HighlightBorder = Color.RED; // Màu nhạt hơn cho các tín hiệu điều khiển
     public static final Color HighlightFill = Color.web("#ffffb5", 0.8); // Màu đậm hơn cho các tín hiệu điều khiển
 
     public static final Color HighlightText = Color.web("#ff6347"); // Màu đỏ tươi cho văn bản highlight 
@@ -425,7 +425,7 @@ public final class DatapathGraphicsFX {
         double topArcCenterY = y + radius;
         double bottomArcCenterY = y + height - radius;
 
-        gc.setFill(highlightTop ? RED : GREY);
+        gc.setFill(highlightTop ? HighlightFill : muxFillColor);
         gc.beginPath();
         gc.moveTo(x, y + height / 2);
         gc.lineTo(x, topArcCenterY);
@@ -434,7 +434,7 @@ public final class DatapathGraphicsFX {
         gc.closePath();
         gc.fill();
 
-        gc.setFill(highlightBottom ? RED : GREY);
+        gc.setFill(highlightBottom ? HighlightFill : muxFillColor);
         gc.beginPath();
         gc.moveTo(x + width, y + height / 2);
         gc.lineTo(x + width, bottomArcCenterY);
@@ -604,7 +604,7 @@ public final class DatapathGraphicsFX {
     public static void drawInstrToControl(GraphicsContext gc, boolean highlight) {
         Color highlightColor = highlight ? HighlightText : BLACK;
         drawText(gc, "Instruction\n [31 - 0]", instrMemX + 0.95 * instrMemWidth,  instrMemY + 0.45 * instrMemHeight, highlightColor, portFontSize, TextAlignment.RIGHT);
-        drawText(gc, "Instruction [31 - 21]", signExtendX - 0.65*signExtendWidth, R_SIGN_EXTEND + 1.35*ellipseHeight, highlightColor, portFontSize, TextAlignment.LEFT);
+        drawText(gc, "Instruction [31 - 21]", instrMemX + instrMemWidth + 0.9*pcWidth, controlY + 0.45 *controlHeight, highlightColor, portFontSize, TextAlignment.LEFT);
 
         // Vẽ đường từ Instruction Memory đến Control
         drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 

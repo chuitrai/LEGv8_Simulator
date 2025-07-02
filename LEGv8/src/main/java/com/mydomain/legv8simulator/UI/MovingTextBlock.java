@@ -41,11 +41,14 @@ class PathSegment {
     }
 
     public PathSegment(Point start, Point end) {
-        this(start, end, 2.0); // Mặc định duration là 2 giây
+        this(start, end, 1.0); // Mặc định duration là 1 giây
     }
     
     public PathSegment(double x1, double y1, double x2, double y2, double duration) {
         this(new Point(x1, y1), new Point(x2, y2), duration);
+    }
+    public PathSegment(double x1, double y1, double x2, double y2) {
+        this(new Point(x1, y1), new Point(x2, y2), 1.0); // Mặc định duration là 1 giây
     }
 }
 
@@ -57,6 +60,19 @@ public class MovingTextBlock extends StackPane {
     private List<PathSegment> path;
     private int currentSegmentIndex;
     private Timeline currentAnimation;
+    private Runnable onPathCompleted;
+
+    public void setOnPathCompleted(Runnable onPathCompleted) {
+        this.onPathCompleted = onPathCompleted;
+    }
+
+    // Call this method when the path animation is completed, for example at the end of your animation logic:
+    private void notifyPathCompleted() {
+        if (onPathCompleted != null) {
+            onPathCompleted.run();
+        }
+    }
+    
     
     public MovingTextBlock(String content, String color) {
         this.content = content;
@@ -114,6 +130,9 @@ public class MovingTextBlock extends StackPane {
     public void addPathSegment(double x1, double y1, double x2, double y2, double duration) {
         path.add(new PathSegment(x1, y1, x2, y2, duration));
     }
+    public void addPathSegment(double x1, double y1, double x2, double y2) {
+        path.add(new PathSegment(x1, y1, x2, y2, 1.0));
+    }
     
     // Bắt đầu di chuyển theo path đã định sẵn
     public void startMoving() {
@@ -161,6 +180,7 @@ private void moveToNextSegment() {
     // Được gọi khi hoàn thành toàn bộ path
     protected void onPathCompleted() {
         // Override để xử lý khi hoàn thành path
+        notifyPathCompleted();
     }
     
     // Dừng animation hiện tại

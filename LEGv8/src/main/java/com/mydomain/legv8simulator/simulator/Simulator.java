@@ -1,7 +1,7 @@
 package main.java.com.mydomain.legv8simulator.simulator;
 
 import main.java.com.mydomain.legv8simulator.core.*;
-import main.java.com.mydomain.legv8simulator.gui.DatapathSnapshot_demo;
+import main.java.com.mydomain.legv8simulator.gui.DatapathSnapshot;
 import main.java.com.mydomain.legv8simulator.instruction.*;
 import main.java.com.mydomain.legv8simulator.simulator.pipeline.*;
 import main.java.com.mydomain.legv8simulator.utils.BitUtils;
@@ -76,6 +76,7 @@ public class Simulator extends Observable_demo {
             default:
                 break;
         }
+        createSnapshot();
         return true;
     }
 
@@ -320,7 +321,7 @@ public class Simulator extends Observable_demo {
     }
 
     // Hàm tạo snapshot
-    private DatapathSnapshot_demo createSnapshot() {
-        return new DatapathSnapshot_demo(if_id_latch, id_ex_latch, ex_mem_latch, mem_wb_latch);
+    public DatapathSnapshot createSnapshot() {
+        return new DatapathSnapshot(if_id_latch, id_ex_latch, ex_mem_latch, mem_wb_latch);
     }
 }
