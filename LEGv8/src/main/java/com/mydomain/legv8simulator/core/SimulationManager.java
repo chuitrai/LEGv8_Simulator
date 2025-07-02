@@ -69,7 +69,8 @@ public class SimulationManager {
     public Simulator getSimulator() { return simulator; }
     public Assembler getAssembler() { return assembler; }
     public int[] getMachineCode() { return machineCode; }
-    public List<String> getAssemblyLines() { return assemblyLines; }
+    public List<String> getAssemblyLines() { return assemblyLines
+        ; }
     public String getCurrentFileName() { return currentFileName; }
     public boolean isAssembled() { return isAssembled; }
     public boolean isLoaded() { return isLoaded; }

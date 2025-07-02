@@ -155,10 +155,10 @@ public class SimulatorApp extends Application {
         LEGv8Datapath datapathPane = new LEGv8Datapath();
         Scene scene = new Scene(datapathPane, 1200, 800);
 
-        TextAnimationComponent textAnim = new TextAnimationComponent(datapathPane);
-        textAnim.setText("LEGv8 Datapath Visualization");
+        TextBlockController textBlockController = new TextBlockController(datapathPane);
 
-        AnimationControllerWindow animController = new AnimationControllerWindow(textAnim);
+
+        AnimationControllerWindow animController = new AnimationControllerWindow(textBlockController);
         animController.show();
         primaryStage.setTitle("LEGv8 Datapath Visualization");
         primaryStage.setScene(scene);

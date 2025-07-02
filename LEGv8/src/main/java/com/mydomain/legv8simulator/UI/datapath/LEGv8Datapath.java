@@ -8,8 +8,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
-import main.java.com.mydomain.legv8simulator.UI.TextAnimationComponent;
-import main.java.com.mydomain.legv8simulator.UI.TextAnimationComponent.Point;
+import main.java.com.mydomain.legv8simulator.UI.MovingTextBlock;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
@@ -25,14 +24,9 @@ public class LEGv8Datapath extends Pane {
     private Canvas canvas;
     private GraphicsContext gc;
     private Label pcLabel, imLabel, rfLabel, aluLabel, dmLabel;
-
-    // TextAnimation components cho từng loại dữ liệu
-    private TextAnimationComponent instructionAnimation;
-    private TextAnimationComponent dataAnimation;
-    private TextAnimationComponent controlAnimation;
     
     // Predefined paths cho các loại instruction
-    private Map<String, List<Point>> instructionPaths;
+    // private Map<String, List<Point>> instructionPaths;
 
     private SimulationManager simManager;
 
@@ -177,28 +171,23 @@ public void updateLayoutVars(double width, double height) {
         canvas.heightProperty().addListener(evt -> draw());
     }
     public void draw() {
-    // Lấy kích thước hiện tại của canvas
+        // Lấy kích thước hiện tại của canvas
 
-    width = getWidth();
-    height = getHeight();
+        width = getWidth();
+        height = getHeight();
 
-    // Nếu canvas chưa có kích thước thì không vẽ gì cả
-    if (width == 0 || height == 0) {
-        return;
-    }
+        // Nếu canvas chưa có kích thước thì không vẽ gì cả
+        if (width == 0 || height == 0) {
+            return;
+        }
 
-    gc.clearRect(0, 0, width, height);
+        gc.clearRect(0, 0, width, height);
 
-    // Thiết lập màu nền
-    gc.setFill(Color.WHITE);
-    gc.fillRect(0, 0, width, height);
+        // Thiết lập màu nền
+        gc.setFill(Color.WHITE);
+        gc.fillRect(0, 0, width, height);
 
-    updateLayoutVars(width, height);
-
-        
-    // Kích thước font chữ co giãn
-
-
+        updateLayoutVars(width, height);
         // --- VẼ CÁC KHỐI ---
         drawCompRect(gc, pcRectX, pcRectY, pcRectWidth, pcRectHeight, pcBorderColor, pcFillColor, true); // Program Counter
         drawCompRect(gc, instrMemX, instrMemY, instrMemWidth, instrMemHeight, instrMemBorderColor, instrMemFillColor); // Instruction Memory
@@ -249,7 +238,7 @@ public void updateLayoutVars(double width, double height) {
         drawAdd4(gc, false);
         drawInstrToControl(gc, false);
         drawShiftLeftToAddBranch(gc, false);
-        drawInstrToSignExtend(gc, false);
+        drawInstrToSignExtend(gc, true);
         drawInstrToRegRead1(gc, false);
         drawInstrToMuxReg0(gc, false);
         drawInstrToRegWrite(gc, false);
@@ -317,242 +306,6 @@ public void updateLayoutVars(double width, double height) {
         drawText(gc, "32", signExtendX - 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.RIGHT);
         drawText(gc, "64", signExtendX + signExtendWidth + 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.LEFT);
     }
-
-    private void setupAnimationPaths() {
-        instructionPaths = new HashMap<>();
-        
-        // R-type instruction path (ADD, SUB, AND, OR, etc.)
-        List<Point> rTypePath = new ArrayList<>();
-        rTypePath.add(new Point(C1_PC_IM + pcWidth, R_MAIN_PATH)); // PC
-        rTypePath.add(new Point(instrMemX, R_MAIN_PATH)); // To IM
-        rTypePath.add(new Point(C1_PC_IM + pcWidth*1.5, R_MAIN_PATH)); // To Add 4
-        rTypePath.add(new Point(C1_PC_IM + pcWidth*1.5, add4Y + add4Height*0.25)); // To Add 4
-        rTypePath.add(new Point(add4X, add4Y + add4Height*0.25)); // To Add 4
-        rTypePath.add(new Point(instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height)); // From IM (9-5)
-        rTypePath.add(new Point(instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height)); // From IM (9-5)
-        rTypePath.add(new Point(instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.1 * regHeight)); // From IM (9-5)
-        rTypePath.add(new Point(regX, regY + 0.1 * regHeight)); // From IM (9-5)
-        rTypePath.add(new Point(regX + regWidth, R_MAIN_PATH + 0.1 * height)); // To Reg Read 1
-        
-        rTypePath.add(new Point(C1_PC_IM + pcWidth, R_MAIN_PATH)); // Back to PC
-        instructionPaths.put("R-FORMAT", rTypePath);
-        
-        // I-type Load instruction path (LDUR)
-        List<Point> loadPath = new ArrayList<>();
-
-        instructionPaths.put("I-TYPE-LOAD", loadPath);
-        
-        // I-type Store instruction path (STUR)
-        List<Point> storePath = new ArrayList<>();
-
-        instructionPaths.put("I-TYPE-STORE", storePath);
-        
-        // Branch instruction path
-        List<Point> branchPath = new ArrayList<>();
-
-        instructionPaths.put("BRANCH", branchPath);
-    }
-
-    /**
-     * Khởi tạo các animation components
-     */
-    private void initializeAnimations() {
-        // Instruction flow animation
-        instructionAnimation = new TextAnimationComponent(this);
-        instructionAnimation.setText("INSTRUCTION");
-        instructionAnimation.backgroundColorProperty().set(Color.web("#3498db"));
-        instructionAnimation.textColorProperty().set(Color.WHITE);
-        instructionAnimation.fontSizeProperty().set(12);
-        
-        // Data flow animation
-        dataAnimation = new TextAnimationComponent(this);
-        dataAnimation.setText("DATA");
-        dataAnimation.backgroundColorProperty().set(Color.web("#2ecc71"));
-        dataAnimation.textColorProperty().set(Color.WHITE);
-        dataAnimation.fontSizeProperty().set(12);
-        
-        // Control signal animation
-        controlAnimation = new TextAnimationComponent(this);
-        controlAnimation.setText("CONTROL");
-        controlAnimation.backgroundColorProperty().set(Color.web("#e74c3c"));
-        controlAnimation.textColorProperty().set(Color.WHITE);
-        controlAnimation.fontSizeProperty().set(10);
-    }
-    
-    /**
-     * Simulate instruction fetch phase
-     */
-    public void simulateInstructionFetch() {
-        List<Point> fetchPath = new ArrayList<>();
-        fetchPath.add(new Point(100, 130)); // PC
-        fetchPath.add(new Point(200, 130)); // To IM
-        fetchPath.add(new Point(320, 130)); // From IM
-        
-        instructionAnimation.setText("FETCH");
-        instructionAnimation.setAnimationData("FETCH", fetchPath);
-        instructionAnimation.speedProperty().set(30);
-        instructionAnimation.play();
-    }
-    
-    /**
-     * Simulate R-type instruction execution
-     */
-    public void simulateRTypeInstruction() {
-        instructionAnimation.setText("ADD X1, X2, X3");
-        instructionAnimation.setAnimationData("ADD X1, X2, X3", instructionPaths.get("R-TYPE"));
-        instructionAnimation.speedProperty().set(25);
-        instructionAnimation.play();
-    }
-    
-    /**
-     * Simulate Load instruction execution
-     */
-    public void simulateLoadInstruction() {
-        dataAnimation.setText("LDUR X1, [X2, #8]");
-        dataAnimation.setAnimationData("LDUR X1, [X2, #8]", instructionPaths.get("I-TYPE-LOAD"));
-        dataAnimation.speedProperty().set(20);
-        dataAnimation.play();
-    }
-    
-    /**
-     * Simulate Store instruction execution
-     */
-    public void simulateStoreInstruction() {
-        dataAnimation.setText("STUR X1, [X2, #8]");
-        dataAnimation.setAnimationData("STUR X1, [X2, #8]", instructionPaths.get("I-TYPE-STORE"));
-        dataAnimation.speedProperty().set(20);
-        dataAnimation.play();
-    }
-    
-    /**
-     * Simulate Branch instruction execution
-     */
-    public void simulateBranchInstruction() {
-        controlAnimation.setText("CBZ X1, LABEL");
-        controlAnimation.setAnimationData("CBZ X1, LABEL", instructionPaths.get("BRANCH"));
-        controlAnimation.speedProperty().set(30);
-        controlAnimation.play();
-    }
-    
-    /**
-     * Execute instruction based on current simulation state
-     */
-    public void executeCurrentInstruction() {
-        if (simManager == null) {
-            simManager = SimulationManager.getInstance();
-        }
-        
-        // Get current instruction from simulation manager
-        String currentInstruction = getCurrentInstructionFromSimulation();
-        
-        if (currentInstruction != null) {
-            String instructionType = determineInstructionType(currentInstruction);
-            
-            switch (instructionType) {
-                case "R-TYPE":
-                    simulateRTypeInstruction();
-                    break;
-                case "I-TYPE-LOAD":
-                    simulateLoadInstruction();
-                    break;
-                case "I-TYPE-STORE":
-                    simulateStoreInstruction();
-                    break;
-                case "BRANCH":
-                    simulateBranchInstruction();
-                    break;
-                default:
-                    simulateInstructionFetch();
-                    break;
-            }
-        }
-    }
-    
-    /**
-     * Get current instruction from simulation
-     */
-    private String getCurrentInstructionFromSimulation() {
-        // This would interface with your SimulationManager
-        // Return the current instruction being executed
-        // For now, return a placeholder
-        return "ADD X1, X2, X3";
-    }
-    
-    /**
-     * Determine instruction type from instruction string
-     */
-    private String determineInstructionType(String instruction) {
-        String upperInstr = instruction.toUpperCase().trim();
-        
-        if (upperInstr.startsWith("ADD") || upperInstr.startsWith("SUB") || 
-            upperInstr.startsWith("AND") || upperInstr.startsWith("OR") ||
-            upperInstr.startsWith("XOR")) {
-            return "R-TYPE";
-        } else if (upperInstr.startsWith("LDUR")) {
-            return "I-TYPE-LOAD";
-        } else if (upperInstr.startsWith("STUR")) {
-            return "I-TYPE-STORE";
-        } else if (upperInstr.startsWith("CBZ") || upperInstr.startsWith("CBNZ") ||
-                   upperInstr.startsWith("B.EQ") || upperInstr.startsWith("B.NE")) {
-            return "BRANCH";
-        }
-        
-        return "UNKNOWN";
-    }
-    
-    /**
-     * Step through instruction execution
-     */
-    public void stepExecution() {
-        executeCurrentInstruction();
-    }
-    
-    /**
-     * Reset all animations
-     */
-    public void resetAnimations() {
-        instructionAnimation.reset();
-        dataAnimation.reset();
-        controlAnimation.reset();
-    }
-    
-    /**
-     * Pause all animations
-     */
-    public void pauseAnimations() {
-        instructionAnimation.pause();
-        dataAnimation.pause();
-        controlAnimation.pause();
-    }
-    
-    /**
-     * Get animation components for external control
-     */
-    public TextAnimationComponent getInstructionAnimation() {
-        return instructionAnimation;
-    }
-    
-    public TextAnimationComponent getDataAnimation() {
-        return dataAnimation;
-    }
-    
-    public TextAnimationComponent getControlAnimation() {
-        return controlAnimation;
-    }
-
-    
-
-    
-    /**
-     * Update datapath based on simulation state
-     */
-    public void updateFromSimulation() {
-        if (simManager != null) {
-            // Update based on current simulation state
-            // This would be called from your main simulation loop
-            executeCurrentInstruction();
-        }
-    }
-
-
 }
+
+    
