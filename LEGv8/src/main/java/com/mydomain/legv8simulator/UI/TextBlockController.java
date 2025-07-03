@@ -18,6 +18,7 @@ import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 import main.java.com.mydomain.legv8simulator.utils.BitUtils;
 import main.java.com.mydomain.legv8simulator.gui.DatapathSnapshot;
 import main.java.com.mydomain.legv8simulator.instruction.*;
+import main.java.com.mydomain.legv8simulator.simulator.control.ControlSignals;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ public class TextBlockController extends StackPane{
     private LEGv8Datapath datapath;
     private List<MovingTextBlock> activeBlocks;
     private SimulationManager simManager;
+
+    Color controlBlock = Color.web("#e040fb");
     
     public TextBlockController(LEGv8Datapath datapath) {
         this.datapath = datapath;
@@ -46,6 +49,8 @@ public class TextBlockController extends StackPane{
         simManager = SimulationManager.getInstance();
         simManager.stepSimulation(1); 
         simManager = SimulationManager.getInstance();
+        drawPC(datapath.gc,true);
+        drawAdd4Block(datapath.gc, true);
         drawPCToAdd4(datapath.gc, true);
         drawPCToInstructionMemory(datapath.gc, true);
         String adrr = String.format("0x%04X", simManager.getCpu().getPC().getValue());
@@ -89,15 +94,15 @@ public class TextBlockController extends StackPane{
     }
     public void simulateDecode() {
         simManager = SimulationManager.getInstance();
-        // DatapathSnapshot snapshot = simManager.getSimulator().createSnapshot();
-        // Instruction instr = snapshot.id_ex_latch.instruction;
-        MovingTextBlock instruction = new MovingTextBlock(BitUtils.toBinaryString32(24));
-        MovingTextBlock opcode = new MovingTextBlock("instr.getOpcodeMnemonic()");
-        MovingTextBlock rn = new MovingTextBlock(BitUtils.toBinaryString(24,5,9));
-        MovingTextBlock imm = new MovingTextBlock(BitUtils.toBinaryString32(24));
-        MovingTextBlock rd = new MovingTextBlock(BitUtils.toBinaryString(24,0,4));
-        MovingTextBlock rt = new MovingTextBlock(BitUtils.toBinaryString(24,0,4));
-        MovingTextBlock rm = new MovingTextBlock(BitUtils.toBinaryString(24,16,20));
+        int instr = simManager.getMachineCode()[simManager.getCurrentPC()/4];
+        drawInstructionMemory(datapath.gc, true);
+        MovingTextBlock instruction = new MovingTextBlock(BitUtils.toBinaryString32(instr));
+        MovingTextBlock opcode = new MovingTextBlock(BitUtils.toBinaryString(instr,21,31));
+        MovingTextBlock rn = new MovingTextBlock(BitUtils.toBinaryString(instr,5,9));
+        MovingTextBlock imm = new MovingTextBlock(BitUtils.toBinaryString32(instr));
+        MovingTextBlock rd = new MovingTextBlock(BitUtils.toBinaryString(instr,0,4));
+        MovingTextBlock rt = new MovingTextBlock(BitUtils.toBinaryString(instr,0,4));
+        MovingTextBlock rm = new MovingTextBlock(BitUtils.toBinaryString(instr,16,20));
         drawInstrToControl(datapath.gc, true);
         drawInstrToRegRead1(datapath.gc, true);
         drawInstrToMuxReg0(datapath.gc, true);
@@ -131,7 +136,7 @@ public class TextBlockController extends StackPane{
 
             List<PathSegment> rdPath = new ArrayList<>();
             rdPath.add(new PathSegment(instrMemX + instrMemWidth + 0.8*pcWidth, regY + 0.7 *regHeight, C2_CONTROL - 0.05*width, regY + 0.7 *regHeight));
-            rdPath.add(new PathSegment(C2_CONTROL - 0.05*width, regY + 0.7 *regHeight, C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight));
+            rdPath.add(new PathSegment(C2_CONTROL - 0.05*width, regY + 0.7 *regHeight, C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight, regY + 0.7 *regHeight));
             rdPath.add(new PathSegment(C2_CONTROL - 0.05*width, muxRegInputY + 0.8*muxHeight, muxRegInputX - rd.getWidth(),muxRegInputY + 0.8*muxHeight));
             rd.setPath(rdPath);
             addAndStartBlock(rd);
@@ -145,32 +150,19 @@ public class TextBlockController extends StackPane{
     }
     
     public void simulateExecute() {
-        MovingTextBlock data1 = new MovingTextBlock("0x1234", "#27ae60");
-        MovingTextBlock data2 = new MovingTextBlock("0x5678", "#27ae60");
-        
-        // Data paths: Register File -> MUX -> ALU
-        List<PathSegment> dataPath1 = new ArrayList<>();
-        dataPath1.add(new PathSegment(290, 350, 350, 230, 1.0));  // Register to MUX
-        dataPath1.add(new PathSegment(350, 230, 600, 310, 1.0));  // MUX to ALU
-        data1.setPath(dataPath1);
-        
-        List<PathSegment> dataPath2 = new ArrayList<>();
-        dataPath2.add(new PathSegment(290, 380, 350, 230, 1.2));  // Register to MUX
-        dataPath2.add(new PathSegment(350, 230, 600, 330, 1.0));  // MUX to ALU
-        data2.setPath(dataPath2);
-        
-        addAndStartBlock(data1);
-        addAndStartBlock(data2);
-        
-        // Result xuất hiện sau khi inputs đến ALU
-        Timeline delay = new Timeline(new KeyFrame(Duration.seconds(2.5), e -> {
-            MovingTextBlock result = new MovingTextBlock("0x68AC", "#27ae60");
-            List<PathSegment> resultPath = new ArrayList<>();
-            resultPath.add(new PathSegment(650, 320, 750, 300, 1.0));  // ALU to output
-            result.setPath(resultPath);
-            addAndStartBlock(result);
-        }));
-        delay.play();
+        drawCompEllipse(datapath.gc, controlX, controlY, controlWidth, controlHeight, controlBorderColor, controlFillColor, true); // Control
+        drawControlText(datapath.gc, true);
+        simulateReg2Loc("1");
+        simulateUncondBranch("1");
+        simulateFlagBranch("1");
+        simulateZeroBranch("0");
+        simulateMemRead("0");
+        simulateMemToReg("1");
+        simulateMemWrite("1");
+        simulateFlagWrite("1");
+        simulateALUSrc("0");
+        simulateALUOp("0");
+        simulateRegWrite("1");
     }
     
     public void simulateMemoryAccess() {
@@ -228,12 +220,15 @@ public class TextBlockController extends StackPane{
         });
         fade.play();
     }
+
+
     
     public void clearAllBlocks() {
         List<MovingTextBlock> blocksToRemove = new ArrayList<>(activeBlocks);
         for (MovingTextBlock block : blocksToRemove) {
             removeBlock(block);
         }
+        datapath.draw();
     }
 
     // Thêm những phương thức này vào trong lớp TextBlockController
@@ -264,4 +259,272 @@ public class TextBlockController extends StackPane{
         }
     }
 
+    public void simulateReg2Loc(String content) {
+    MovingTextBlock reg2Loc = new MovingTextBlock(content, controlBlock);
+    List<PathSegment> reg2LocPath = new ArrayList<>();
+    drawReg2Loc(datapath.gc, true);
+    reg2LocPath.add(new PathSegment(controlX + 0.7 * controlWidth, controlY + 0.05 * controlHeight, controlX + controlWidth, controlY + 0.05 * controlHeight, 0.5));
+    reg2LocPath.add(new PathSegment(controlX + controlWidth, controlY + 0.05 * controlHeight,controlX + controlWidth,addBranchY + addBranchHeight * 0.65,0.5));
+    reg2LocPath.add(new PathSegment(controlX + controlWidth,addBranchY + addBranchHeight * 0.65, instrMemX + instrMemWidth * 1.15,addBranchY + addBranchHeight * 0.65,0.5));
+    reg2LocPath.add(new PathSegment(instrMemX + instrMemWidth * 1.15,addBranchY + addBranchHeight * 0.65,instrMemX + instrMemWidth * 1.15,muxRegInputY + muxHeight * 1.75,0.5));
+    reg2LocPath.add(new PathSegment(instrMemX + instrMemWidth * 1.15,muxRegInputY + muxHeight * 1.75,muxRegInputX + 0.5 * muxWidth,muxRegInputY + muxHeight * 1.75,0.5));
+    reg2LocPath.add(new PathSegment(muxRegInputX + 0.5 * muxWidth,muxRegInputY + muxHeight * 1.75,muxRegInputX + 0.5 * muxWidth,muxRegInputY + muxHeight, 0.5));
+    reg2Loc.setPath(reg2LocPath);
+    addAndStartBlock(reg2Loc);
+    }
+    
+    public void simulateUncondBranch(String content) {
+        drawUncondBranch(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.85 * controlWidth,
+            controlY + 0.14 * controlHeight,
+            orGateX + 0.1 * gateW,
+            controlY + 0.14 * controlHeight,
+            0.7
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateFlagBranch(String content) {
+        drawFlagBranch(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.9 * controlWidth,
+            controlY + 0.23 * controlHeight,
+            andGate1X - 0.5 * gateW,
+            controlY + 0.23 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            andGate1X - 0.5 * gateW,
+            controlY + 0.23 * controlHeight,
+            andGate1X - 0.5 * gateW,
+            andGateY + 0.2 * gateH,
+            0.5
+        ));
+        path.add(new PathSegment(
+            andGate1X - 0.5 * gateW,
+            andGateY + 0.2 * gateH,
+            andGate1X,
+            andGateY + 0.2 * gateH,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateZeroBranch(String content) {
+        drawZeroBranch(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.95 * controlWidth,
+            controlY + 0.32 * controlHeight,
+            andGate2X - 0.7 * gateW,
+            controlY + 0.32 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            andGate2X - 0.7 * gateW,
+            controlY + 0.32 * controlHeight,
+            andGate2X - 0.7 * gateW,
+            andGateY + 0.2 * gateH,
+            0.5
+        ));
+        path.add(new PathSegment(
+            andGate2X - 0.7 * gateW,
+            andGateY + 0.2 * gateH,
+            andGate2X,
+            andGateY + 0.2 * gateH,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateMemRead(String content) {
+        drawMemRead(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.97 * controlWidth,
+            controlY + 0.41 * controlHeight,
+            muxMemToRegX + 2.5 * muxWidth,
+            controlY + 0.41 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            muxMemToRegX + 2.5 * muxWidth,
+            controlY + 0.41 * controlHeight,
+            muxMemToRegX + 2.5 * muxWidth,
+            dataMemY + 1.4 * dataMemHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            muxMemToRegX + 2.5 * muxWidth,
+            dataMemY + 1.4 * dataMemHeight,
+            dataMemX + dataMemWidth * 0.5,
+            dataMemY + 1.4 * dataMemHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            dataMemX + dataMemWidth * 0.5,
+            dataMemY + 1.4 * dataMemHeight,
+            dataMemX + dataMemWidth * 0.5,
+            dataMemY + dataMemHeight,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateMemToReg(String content) {
+        drawMemToReg(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.99 * controlWidth,
+            controlY + 0.5 * controlHeight,
+            muxMemToRegX + 0.5 * muxWidth,
+            controlY + 0.5 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            muxMemToRegX + 0.5 * muxWidth,
+            controlY + 0.5 * controlHeight,
+            muxMemToRegX + 0.5 * muxWidth,
+            muxMemToRegY,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateMemWrite(String content) {
+        drawMemWrite(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.97 * controlWidth,
+            controlY + 0.59 * controlHeight,
+            dataMemX + dataMemWidth * 0.5,
+            controlY + 0.59 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            dataMemX + dataMemWidth * 0.5,
+            controlY + 0.59 * controlHeight,
+            dataMemX + dataMemWidth * 0.5,
+            dataMemY,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateFlagWrite(String content) {
+        drawFlagWrite(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.98 * controlWidth,
+            controlY + 0.68 * controlHeight,
+            aluX + 0.48 * aluWidth,
+            controlY + 0.68 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            aluX + 0.48 * aluWidth,
+            controlY + 0.68 * controlHeight,
+            aluX + 0.48 * aluWidth,
+            flagY,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateALUSrc(String content) {
+        drawALUSrc(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.93 * controlWidth,
+            controlY + 0.77 * controlHeight,
+            muxAluInputX + 0.5 * muxWidth,
+            controlY + 0.77 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            muxAluInputX + 0.5 * muxWidth,
+            controlY + 0.77 * controlHeight,
+            muxAluInputX + 0.5 * muxWidth,
+            muxAluInputY,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateALUOp(String content) {
+        drawALUOp(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.83 * controlWidth,
+            controlY + 0.86 * controlHeight,
+            muxAluInputX - 1.5 * muxWidth,
+            controlY + 0.86 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            muxAluInputX - 1.5 * muxWidth,
+            controlY + 0.86 * controlHeight,
+            muxAluInputX - 1.5 * muxWidth,
+            aluControlY + 1.7 * aluControlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            muxAluInputX - 1.5 * muxWidth,
+            aluControlY + 1.7 * aluControlHeight,
+            aluControlX + aluControlHeight * 0.5,
+            aluControlY + 1.7 * aluControlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            aluControlX + aluControlHeight * 0.5,
+            aluControlY + 1.7 * aluControlHeight,
+            aluControlX + aluControlHeight * 0.5,
+            aluControlY + aluControlHeight,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
+
+    public void simulateRegWrite(String content) {
+        drawRegWrite(datapath.gc, true);
+        MovingTextBlock block = new MovingTextBlock(content, controlBlock);
+        List<PathSegment> path = new ArrayList<>();
+        path.add(new PathSegment(
+            controlX + 0.7 * controlWidth,
+            controlY + 0.95 * controlHeight,
+            regX + 0.5 * rectWidth,
+            controlY + 0.95 * controlHeight,
+            0.5
+        ));
+        path.add(new PathSegment(
+            regX + 0.5 * rectWidth,
+            controlY + 0.95 * controlHeight,
+            regX + 0.5 * rectWidth,
+            regY,
+            0.5
+        ));
+        block.setPath(path);
+        addAndStartBlock(block);
+    }
 }

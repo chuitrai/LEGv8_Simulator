@@ -8,8 +8,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
-import main.java.com.mydomain.legv8simulator.UI.MovingTextBlock;
-import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
 
@@ -17,12 +15,9 @@ public class LEGv8Datapath extends Pane {
 
     public Canvas canvas;
     public GraphicsContext gc;
-    private Label pcLabel, imLabel, rfLabel, aluLabel, dmLabel;
     
     // Predefined paths cho các loại instruction
     // private Map<String, List<Point>> instructionPaths;
-
-    private SimulationManager simManager;
 
 
 
@@ -183,22 +178,18 @@ public void updateLayoutVars(double width, double height) {
 
         updateLayoutVars(width, height);
         // --- VẼ CÁC KHỐI ---
-        drawCompRect(gc, pcRectX, pcRectY, pcRectWidth, pcRectHeight, pcBorderColor, pcFillColor, true); // Program Counter
-        drawCompRect(gc, instrMemX, instrMemY, instrMemWidth, instrMemHeight, instrMemBorderColor, instrMemFillColor); // Instruction Memory
-        drawCompRect(gc, regX, regY, regWidth, regHeight, regBorderColor, regFillColor); // Registers
-        drawALU(gc, aluX, aluY, aluBlockWidth, aluBlockHeight, aluBorderColor, aluFillColor, false); // ALU
-        drawCompRect(gc, dataMemX, dataMemY, dataMemWidth, dataMemHeight, dataMemBorderColor, dataMemFillColor); // Data Memory
-
-        // --- Khối logic trên cùng ---
-        drawALU(gc, add4X, add4Y, add4Width, add4Height, add4BorderColor, add4FillColor, false); // Add 4
-        drawCompEllipse(gc, shiftLeft2X, shiftLeft2Y, shiftLeft2Width, shiftLeft2Height, shiftLeft2BorderColor, shiftLeft2FillColor, true); // Shift left 2
-        drawALU(gc, addBranchX, addBranchY, addBranchWidth, addBranchHeight, addBranchBorderColor, addBranchFillColor, false); // Add Branch
-
-        // --- Khối điều khiển và mở rộng ---
-        drawCompEllipse(gc, controlX, controlY, controlWidth, controlHeight, controlBorderColor, controlFillColor, false); // Control
-        drawCompEllipse(gc, signExtendX, signExtendY, signExtendWidth, signExtendHeight, signExtendBorderColor, signExtendFillColor, false); // Sign-extend
-        drawCompEllipse(gc, aluControlX, aluControlY, aluControlWidth, aluControlHeight, aluControlBorderColor, aluControlFillColor, false); // ALU Control
-
+        drawPC(gc, false);
+        drawInstructionMemory(gc, false);
+        drawRegisters(gc, false);
+        drawALUBlock(gc, false);
+        drawDataMemory(gc, false);
+        drawControlUnit(gc, false);
+        drawAdd4Block(gc, false);
+        drawShiftLeft2(gc, false);
+        drawBranchAdder(gc, false);
+        drawSignExtend(gc, false);
+        drawAluControl(gc, false);
+        
         drawFlagBox(gc, "N", flagX, flagY, flagBoxSize, baseFontSize - 2);
         drawFlagBox(gc, "Z", flagX + flagBoxSize, flagY, flagBoxSize, baseFontSize - 2);
         drawFlagBox(gc, "C", flagX + 2 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2);
@@ -257,7 +248,7 @@ public void updateLayoutVars(double width, double height) {
         drawFlagBranch(gc, false);
         drawZeroBranch(gc, false);
         drawMemRead(gc, false);
-        drawMemToReg(gc, true);
+        drawMemToReg(gc, false);
         drawMemWrite(gc, false);
         drawFlagWrite(gc, false);
         drawALUSrc(gc, false);
@@ -270,28 +261,10 @@ public void updateLayoutVars(double width, double height) {
         drawAnd1ToOrGate(gc, false);
         drawAnd2ToOrGate(gc, false);
         drawOrGateToMux(gc, false);
-
-        // --- Nhãn cho các khối chính ---
-        drawTextBold(gc, "PC", pcRectX + pcRectWidth / 2, pcRectY + pcRectHeight / 2, BLACK, baseFontSize + 2, TextAlignment.CENTER);
-        drawTextBold(gc, "Instruction\nmemory", instrMemX + instrMemWidth/2, instrMemY + instrMemHeight * 0.85, BLACK, baseFontSize + 1, TextAlignment.CENTER);
-        drawTextBold(gc, "Registers", regX + regWidth*0.45, regY + regHeight * 0.9, BLACK, baseFontSize + 1, TextAlignment.LEFT);
-        drawTextBold(gc, "ALU", aluX + aluBlockWidth / 2, aluY + aluBlockHeight / 2, Color.BLACK, baseFontSize + 4, TextAlignment.CENTER);
-        drawTextBold(gc, "Data\nmemory", dataMemX + dataMemWidth * 0.7, dataMemY + dataMemHeight * 0.7, BLACK, baseFontSize + 1, TextAlignment.CENTER);
-
-        // --- Nhãn cho các khối phụ ---
-        drawTextBold(gc, "Control", controlX + controlWidth / 2, controlY + controlHeight / 2, BLACK, baseFontSize + 4, TextAlignment.CENTER);
-        drawTextBold(gc, "Add", add4X + add4Width / 2, add4Y + add4Height / 2, BLACK, baseFontSize, TextAlignment.CENTER);
-        drawTextBold(gc, "Shift\nleft 2", shiftLeft2X + shiftLeft2Width / 2, shiftLeft2Y + shiftLeft2Height / 2, BLACK, baseFontSize, TextAlignment.CENTER);
-        drawTextBold(gc, "Add", addBranchX + addBranchWidth / 2, addBranchY + addBranchHeight / 2, BLACK, baseFontSize, TextAlignment.CENTER);
-        drawTextBold(gc, "Sign-\nextend", signExtendX + signExtendWidth / 2, signExtendY + signExtendHeight / 2, BLACK, baseFontSize, TextAlignment.CENTER);
-        drawTextBold(gc, "ALU\ncontrol", aluControlX + aluControlWidth / 2, aluControlY + aluControlHeight / 2, BLACK, baseFontSize, TextAlignment.CENTER);
-
-        // --- Nhãn cho các cổng (Ports) ---
         // --- Nhãn cho các tín hiệu Control ---
         drawControlText(gc, false);
 
         // --- Nhãn cho các hằng số và thông tin khác ---
-        drawText(gc, "4", C1_PC_IM + pcWidth*2.8, add4Y + add4Height*0.85, BLACK, baseFontSize, TextAlignment.RIGHT);
 
         // Nhãn cho Sign Extend
         drawDiagSlash(gc, signExtendX - 0.35 * signExtendWidth, signExtendY + 0.5 * signExtendHeight, BLACK);
@@ -299,6 +272,10 @@ public void updateLayoutVars(double width, double height) {
 
         drawText(gc, "32", signExtendX - 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.RIGHT);
         drawText(gc, "64", signExtendX + signExtendWidth + 0.3 * signExtendWidth, signExtendY + 0.3 *signExtendHeight, BLACK, portFontSize, TextAlignment.LEFT);
+    }
+    public void clear()
+    {
+        gc.clearRect(0,0,width,height);
     }
 }
 

@@ -95,6 +95,28 @@ public class MovingTextBlock extends StackPane {
         
         getChildren().addAll(background, text);
     }
+
+    public MovingTextBlock(String content, Color color) {
+        this.content = content;
+        this.path = new ArrayList<>();
+        this.currentSegmentIndex = 0;
+        
+        background = new Rectangle();
+        background.setFill(color);
+        background.setStroke(Color.WHITE);
+        background.setStrokeWidth(2);
+        background.setArcWidth(8);
+        background.setArcHeight(8);
+        
+        text = new Text(content);
+        text.setFill(Color.WHITE);
+        text.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        
+        // Tự động điều chỉnh kích thước
+        updateSize();
+        
+        getChildren().addAll(background, text);
+    }
     public MovingTextBlock(String content) {
         this(content, "#0078D7"); // Màu mặc định
     }
@@ -141,8 +163,8 @@ public class MovingTextBlock extends StackPane {
         currentSegmentIndex = 0;
         // Đặt vị trí ban đầu
         PathSegment firstSegment = path.get(0);
-        setLayoutX(firstSegment.start.x);
-        setLayoutY(firstSegment.start.y);
+        setLayoutX(firstSegment.start.x - this.getWidth());
+        setLayoutY(firstSegment.start.y - this.getHeight()/2);
         moveToNextSegment();
     }
     
@@ -157,8 +179,8 @@ private void moveToNextSegment() {
     // Tính toán vị trí relative từ vị trí hiện tại
     double currentX = getLayoutX() + getTranslateX();
     double currentY = getLayoutY() + getTranslateY();
-    double toX = getTranslateX() + (segment.end.x - currentX);
-    double toY = getTranslateY() + (segment.end.y - currentY);
+    double toX = getTranslateX() + (segment.end.x - this.getWidth()- currentX);
+    double toY = getTranslateY() + (segment.end.y - this.getHeight()/2 - currentY);
 
     currentAnimation = new Timeline();
     currentAnimation.getKeyFrames().add(new KeyFrame(Duration.seconds(segment.duration),
@@ -166,8 +188,8 @@ private void moveToNextSegment() {
         new KeyValue(this.translateYProperty(), toY)
     ));
     currentAnimation.setOnFinished(e -> {
-        setLayoutX(segment.end.x);
-        setLayoutY(segment.end.y);
+        setLayoutX(segment.end.x - this.getWidth());
+        setLayoutY(segment.end.y - this.getHeight()/2);
         setTranslateX(0);
         setTranslateY(0);
         currentSegmentIndex++;
@@ -198,8 +220,8 @@ private void moveToNextSegment() {
         setTranslateY(0);
         if (!path.isEmpty()) {
             PathSegment firstSegment = path.get(0);
-            setLayoutX(firstSegment.start.x);
-            setLayoutY(firstSegment.start.y);
+            setLayoutX(firstSegment.start.x - this.getWidth());
+            setLayoutY(firstSegment.start.y - this.getHeight()/2);
         }
     }
 

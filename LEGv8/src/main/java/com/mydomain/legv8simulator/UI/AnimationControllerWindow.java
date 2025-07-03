@@ -188,6 +188,7 @@ public class AnimationControllerWindow {
         
         resetBtn.setOnAction(e -> {
             textBlockController.clearAllBlocks();
+            
             isPaused = false;
             updatePlayPauseButtonState();
             updateStatus("Đã reset tất cả mô phỏng.");
@@ -217,7 +218,7 @@ public class AnimationControllerWindow {
         isPaused = false;
         textBlockController.simulateFetch();
         textBlockController.simulateDecode();
-        // textBlockController.simulateExecute();
+        textBlockController.simulateExecute();
         // textBlockController.simulateMemoryAccess();
         // textBlockController.simulateWriteback();
         updateStatus("Đang chạy mô phỏng...");

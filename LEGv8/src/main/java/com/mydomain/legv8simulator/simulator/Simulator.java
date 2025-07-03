@@ -76,7 +76,6 @@ public class Simulator extends Observable_demo {
             default:
                 break;
         }
-        createSnapshot();
         return true;
     }
 
