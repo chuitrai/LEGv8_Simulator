@@ -5,6 +5,7 @@ import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.layout.Border;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -557,6 +558,17 @@ public final class DatapathGraphicsFX {
     public static void drawFlagBox(GraphicsContext gc, String label, double x, double y, double size, int fontSize) {
         gc.setStroke(BLACK);
         gc.setFill(GREY);
+        gc.setLineWidth(1.5);
+        gc.fillRect(x, y, size, size);
+        gc.strokeRect(x, y, size, size);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER); 
+        drawTextBold(gc, label, x + size / 2, y + size / 2, BLACK, fontSize, TextAlignment.CENTER);
+    }
+
+        public static void drawFlagBox(GraphicsContext gc, String label, double x, double y, double size, int fontSize, boolean highlight) {
+        gc.setStroke(highlight? HighlightBorder : BLACK);
+        gc.setFill(highlight? HighlightFill : GREY);
         gc.setLineWidth(1.5);
         gc.fillRect(x, y, size, size);
         gc.strokeRect(x, y, size, size);
