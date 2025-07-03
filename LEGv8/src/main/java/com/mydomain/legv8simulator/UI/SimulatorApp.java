@@ -13,6 +13,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import main.java.com.mydomain.legv8simulator.UI.Animation.TextBlockController;
 import main.java.com.mydomain.legv8simulator.UI.datapath.LEGv8Datapath;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 

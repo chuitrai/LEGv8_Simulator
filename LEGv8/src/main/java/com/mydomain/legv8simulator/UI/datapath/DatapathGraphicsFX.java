@@ -872,6 +872,7 @@ public final class DatapathGraphicsFX {
 
     public static void drawALUToAndGate(GraphicsContext gc, boolean highlight) {
         Color color = highlight ? HighlightControl : ARM_BLUE;
+        drawText(gc, "Zero", aluX + aluBlockWidth*0.95, aluY + aluBlockHeight*0.4, color, portFontSize, TextAlignment.RIGHT);
         drawHorizontalSegment(gc, aluX + aluWidth, aluY + 0.4 * aluBlockHeight, andGate2X - 0.7*gateW, color, false, false);
         drawVerticalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, aluY + 0.4 * aluBlockHeight, color, false, false);
         drawHorizontalSegment(gc, andGate2X - 0.7*gateW, andGateY + 0.8*gateH, andGate2X, color, false, false);

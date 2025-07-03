@@ -1,4 +1,4 @@
-package main.java.com.mydomain.legv8simulator.UI;
+package main.java.com.mydomain.legv8simulator.UI.Animation;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.geometry.Pos;
@@ -88,7 +88,7 @@ public class MovingTextBlock extends StackPane {
         
         text = new Text(content);
         text.setFill(Color.WHITE);
-        text.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        text.setFont(Font.font("Arial", FontWeight.BOLD, 11));
         
         // Tự động điều chỉnh kích thước
         updateSize();
@@ -110,7 +110,7 @@ public class MovingTextBlock extends StackPane {
         
         text = new Text(content);
         text.setFill(Color.WHITE);
-        text.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        text.setFont(Font.font("Arial", FontWeight.BOLD, 11));
         
         // Tự động điều chỉnh kích thước
         updateSize();
@@ -124,8 +124,8 @@ public class MovingTextBlock extends StackPane {
     private void updateSize() {
         double textWidth = text.getBoundsInLocal().getWidth();
         double textHeight = text.getBoundsInLocal().getHeight();
-        background.setWidth(textWidth + 20);
-        background.setHeight(textHeight + 12);
+        background.setWidth(textWidth + 6);
+        background.setHeight(textHeight + 4);
     }
     
     public void updateContent(String newContent) {

@@ -13,7 +13,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-import main.java.com.mydomain.legv8simulator.UI.MovingTextBlock;
+import main.java.com.mydomain.legv8simulator.UI.Animation.TextBlockController;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 /**
@@ -188,7 +188,7 @@ public class AnimationControllerWindow {
         
         resetBtn.setOnAction(e -> {
             textBlockController.clearAllBlocks();
-            
+
             isPaused = false;
             updatePlayPauseButtonState();
             updateStatus("Đã reset tất cả mô phỏng.");
@@ -219,8 +219,9 @@ public class AnimationControllerWindow {
         textBlockController.simulateFetch();
         textBlockController.simulateDecode();
         textBlockController.simulateExecute();
-        // textBlockController.simulateMemoryAccess();
-        // textBlockController.simulateWriteback();
+        textBlockController.simulateMemoryAccess();
+        textBlockController.simulateWriteback();
+        textBlockController.endStage();
         updateStatus("Đang chạy mô phỏng...");
         updatePlayPauseButtonState();
     }

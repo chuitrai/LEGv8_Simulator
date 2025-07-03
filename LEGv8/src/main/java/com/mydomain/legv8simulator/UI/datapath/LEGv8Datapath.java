@@ -196,7 +196,7 @@ public void updateLayoutVars(double width, double height) {
         drawFlagBox(gc, "V", flagX + 3 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2);
 
         // --- VẼ CÁC BỘ MUX ---
-        drawMux(gc, muxRegInputX, muxRegInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, true); // MUX Register Input
+        drawMux(gc, muxRegInputX, muxRegInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX Register Input
         drawMux(gc, muxAluInputX, muxAluInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX ALU Input
         drawMux(gc, muxPcSourceX, muxPcSourceY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX PC Source
         drawMux(gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX MemToReg
@@ -223,7 +223,7 @@ public void updateLayoutVars(double width, double height) {
         drawAdd4(gc, false);
         drawInstrToControl(gc, false);
         drawShiftLeftToAddBranch(gc, false);
-        drawInstrToSignExtend(gc, true);
+        drawInstrToSignExtend(gc, false);
         drawInstrToRegRead1(gc, false);
         drawInstrToMuxReg0(gc, false);
         drawInstrToRegWrite(gc, false);
