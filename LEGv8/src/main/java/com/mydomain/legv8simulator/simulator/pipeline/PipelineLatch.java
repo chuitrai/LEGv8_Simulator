@@ -7,4 +7,7 @@ package main.java.com.mydomain.legv8simulator.simulator.pipeline;
 public abstract class PipelineLatch {
     // Có thể thêm các thuộc tính chung sau này nếu cần
     // ví dụ: mã lệnh hoặc PC của lệnh đang được xử lý.
+    public void print() {
+        // Stub method for printing latch information
+    }
 }

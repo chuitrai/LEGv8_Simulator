@@ -32,6 +32,12 @@ public class SimulatorApp extends Application {
     
     // Method để assembler có thể gọi từ TextFileEditor
 
+    public static RegisterWindow regWin;
+    public static InstructionMemoryWindow instrWin;
+    public static LEGv8Datapath datapathPane;
+    public static AnimationControllerWindow animController;
+
+
     @Override
     public void start(Stage primaryStage) {
         
@@ -142,12 +148,12 @@ public class SimulatorApp extends Application {
     
     private void openSimulationWindows(Stage primaryStage) {
         // Mở cửa sổ hiển thị registers
-        RegisterWindow regWin = new RegisterWindow();
+        regWin = new RegisterWindow();
         // Cập nhật với dữ liệu thực từ CPU
         regWin.show();
 
         // Mở cửa sổ hiển thị instruction memory
-        InstructionMemoryWindow instrWin = new InstructionMemoryWindow();
+        instrWin = new InstructionMemoryWindow();
         // Cập nhật với dữ liệu thực từ memory
         // updateInstructionWindow(instrWin);
         instrWin.show();
@@ -155,22 +161,31 @@ public class SimulatorApp extends Application {
         primaryStage.setY(100);
 
         // Mở cửa sổ datapath visualization
-        LEGv8Datapath datapathPane = new LEGv8Datapath();
+        datapathPane = new LEGv8Datapath();
         Scene scene = new Scene(datapathPane, 900, 600);
 
         TextBlockController textBlockController = new TextBlockController(datapathPane);
 
 
-        AnimationControllerWindow animController = new AnimationControllerWindow(textBlockController);
+        animController = new AnimationControllerWindow(textBlockController);
         primaryStage.setTitle("LEGv8 Datapath Visualization");
         primaryStage.setScene(scene);
         primaryStage.show();
         animController.show();
 
+        animController.writebackBtn.setOnAction(e -> {
+                textBlockController.simulateWriteback();
+                  regWin.updateRegisterWindow();
+            }
+        );
+
+         animController.fetchBtn.setOnAction(e -> {
+            long row = simManager.getSimulator().cpu.getPC().getValue();
+            instrWin.highlightInstruction(row);
+            textBlockController.simulateFetch();
+            }
+        );
     }
-    
-    
-    
     
     private void runSimulation() {
         try {

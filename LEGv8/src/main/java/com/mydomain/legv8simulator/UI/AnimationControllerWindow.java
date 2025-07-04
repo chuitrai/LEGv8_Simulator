@@ -22,22 +22,22 @@ import main.java.com.mydomain.legv8simulator.core.SimulationManager;
  */
 public class AnimationControllerWindow {
 
-    private Stage stage;
-    private TextBlockController textBlockController;
-    private boolean isPaused = false;
-    private SimulationManager simManager;
+    public Stage stage;
+    public TextBlockController textBlockController;
+    public boolean isPaused = false;
+    public SimulationManager simManager;
 
     // UI Controls - Global
-    private Button playBtn, playPauseBtn, stepBtn, resetBtn;
-    private Slider speedSlider;
-    private Label speedValue;
+    public Button playBtn, playPauseBtn, stepBtn, resetBtn;
+    public Slider speedSlider;
+    public Label speedValue;
 
     // UI Controls - Simulation Triggers
-    private Button fetchBtn, decodeBtn, executeBtn, memoryBtn, writebackBtn;
-    private Button pipelineBtn, complexBtn;
+    public Button fetchBtn, decodeBtn, executeBtn, memoryBtn, writebackBtn;
+    public Button pipelineBtn, complexBtn;
     
     // UI Controls - Status
-    private Label statusLabel, activeBlocksLabel;
+    public Label statusLabel, activeBlocksLabel;
 
     public AnimationControllerWindow(TextBlockController textBlockController) {
         this.textBlockController = textBlockController;
@@ -204,6 +204,7 @@ public class AnimationControllerWindow {
         executeBtn.setOnAction(e -> runSimulation(textBlockController::simulateExecute, "Đang mô phỏng EXECUTE..."));
         memoryBtn.setOnAction(e -> runSimulation(textBlockController::simulateMemoryAccess, "Đang mô phỏng MEMORY..."));
         writebackBtn.setOnAction(e -> runSimulation(textBlockController::simulateWriteback, "Đang mô phỏng WRITEBACK..."));
+        
     }
     
     private void togglePlayPause() {
