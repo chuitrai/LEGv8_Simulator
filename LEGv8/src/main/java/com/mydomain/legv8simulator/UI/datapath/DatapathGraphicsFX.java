@@ -726,11 +726,11 @@ public final class DatapathGraphicsFX {
     // Registers -> Data Memory
     public static void drawRegistersToDataMemory(GraphicsContext gc, boolean highlight) {
         Color colorText = highlight ? HighlightText : BLACK;
-        drawText(gc, "Write\ndata", regX + 0.05 * rectWidth, regY + 0.9 * regHeight, colorText, portFontSize, TextAlignment.LEFT);
-        drawText(gc, "Read\ndata 2", regX + regWidth *0.9  + 5, muxAluInputY + 0.3 * muxHeight, colorText, portFontSize, TextAlignment.RIGHT);
         drawHorizontalSegment(gc, regX + rectWidth, muxAluInputY + 0.3 * muxHeight, regX + rectWidth * 1.1, highlight ? Highlight : BLACK, false, false);
         drawVerticalSegment(gc, regX + rectWidth * 1.1, muxAluInputY + 0.3 * muxHeight, dataMemY + 0.8 * dataMemHeight, highlight ? Highlight : BLACK, true, false);
         drawRightArrow(gc, regX + rectWidth * 1.1, dataMemY + 0.8 * dataMemHeight, dataMemX, highlight ? Highlight : BLACK, false);
+        drawText(gc, "Write\ndata", dataMemX + dataMemWidth * 0.05, dataMemY + dataMemHeight * 0.8, BLACK, portFontSize, TextAlignment.LEFT);
+        drawText(gc, "Read\ndata 2", regX + regWidth *0.9  + 5, muxAluInputY + 0.3 * muxHeight, colorText, portFontSize, TextAlignment.RIGHT);
     }
 
     // Registers -> ALU
