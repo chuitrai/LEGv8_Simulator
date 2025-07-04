@@ -16,4 +16,11 @@ public final class IF_ID_Latch extends PipelineLatch {
         this.pcIncremented = pcIncremented;
         this.instructionMachineCode = instructionMachineCode;
     }
+
+    @Override
+    public String toString() {
+        return String.format("IF_ID_Latch{pcIncremented=0x%08X, instructionMachineCode=0x%08X}", 
+                             pcIncremented, instructionMachineCode
+                                );
+    }
 }

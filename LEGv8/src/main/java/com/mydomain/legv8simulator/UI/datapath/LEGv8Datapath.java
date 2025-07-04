@@ -199,7 +199,7 @@ public void updateLayoutVars(double width, double height) {
         drawMux(gc, muxRegInputX, muxRegInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX Register Input
         drawMux(gc, muxAluInputX, muxAluInputY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX ALU Input
         drawMux(gc, muxPcSourceX, muxPcSourceY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX PC Source
-        drawMux(gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, muxBorderColor, muxFillColor, false); // MUX MemToReg
+        drawMemMux(gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, false, false); // MUX MemToReg
 
         // // ===================================
         // // 3. VẼ CÁC CỔNG LOGIC

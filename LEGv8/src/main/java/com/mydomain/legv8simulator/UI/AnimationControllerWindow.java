@@ -51,6 +51,8 @@ public class AnimationControllerWindow {
         stage = new Stage();
         stage.setTitle("Simulation Controller");
         stage.setResizable(true);
+        stage.setX(100);
+        stage.setY(200);
 
         VBox root = new VBox(15);
         root.setPadding(new Insets(15));
@@ -188,18 +190,28 @@ public class AnimationControllerWindow {
         
         resetBtn.setOnAction(e -> {
             textBlockController.clearAllBlocks();
+            simManager = SimulationManager.getInstance();
+            simManager.reset();
 
             isPaused = false;
             updatePlayPauseButtonState();
             updateStatus("Đã reset tất cả mô phỏng.");
         });
 
-        // Simulation Triggers
-        fetchBtn.setOnAction(e -> runSimulation(textBlockController::simulateFetch, "Đang mô phỏng FETCH..."));
-        decodeBtn.setOnAction(e -> runSimulation(textBlockController::simulateDecode, "Đang mô phỏng DECODE..."));
-        executeBtn.setOnAction(e -> runSimulation(textBlockController::simulateExecute, "Đang mô phỏng EXECUTE..."));
-        memoryBtn.setOnAction(e -> runSimulation(textBlockController::simulateMemoryAccess, "Đang mô phỏng MEMORY..."));
-        writebackBtn.setOnAction(e -> runSimulation(textBlockController::simulateWriteback, "Đang mô phỏng WRITEBACK..."));
+        fetchBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateFetch(null), "Đang mô phỏng FETCH..."));
+        decodeBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateDecode(null), "Đang mô phỏng DECODE..."));
+        executeBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateExecute(null), "Đang mô phỏng EXECUTE..."));
+        memoryBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateMemoryAccess(null), "Đang mô phỏng MEMORY..."));
+        writebackBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateWriteback(null), "Đang mô phỏng WRITEBACK..."));
+    }
+
+    private void runSingleStage(Runnable simulation, String statusMessage) {
+        updateStatus(statusMessage);
+        simulation.run();
+        // Khi một mô phỏng mới bắt đầu, đảm bảo nó đang chạy
+        if (isPaused) {
+            togglePlayPause();
+        }
     }
     
     private void togglePlayPause() {
@@ -216,13 +228,29 @@ public class AnimationControllerWindow {
 
     private void togglePlay() {
         isPaused = false;
-        textBlockController.simulateFetch();
-        textBlockController.simulateDecode();
-        textBlockController.simulateExecute();
-        textBlockController.simulateMemoryAccess();
-        textBlockController.simulateWriteback();
-        textBlockController.endStage();
-        updateStatus("Đang chạy mô phỏng...");
+        updateStatus("Bắt đầu Fetch...");
+        do {
+        textBlockController.simulateFetch(() -> {
+            updateStatus("Fetch xong. Bắt đầu Decode...");
+            
+            textBlockController.simulateDecode(() -> {
+                updateStatus("Decode xong. Bắt đầu Execute...");
+                
+                textBlockController.simulateExecute(() -> {
+                    updateStatus("Execute xong. Bắt đầu Memory Access...");
+                    
+                    textBlockController.simulateMemoryAccess(() -> {
+                        updateStatus("Memory Access xong. Bắt đầu Writeback...");
+                        
+                        textBlockController.simulateWriteback(() -> {
+                            updateStatus("Writeback xong. Kết thúc chu kỳ...");
+                        });
+                    });
+                });
+            });
+        });
+        simManager = SimulationManager.getInstance();
+        } while(simManager.getSimulator().id_ex_latch != null);
         updatePlayPauseButtonState();
     }
     

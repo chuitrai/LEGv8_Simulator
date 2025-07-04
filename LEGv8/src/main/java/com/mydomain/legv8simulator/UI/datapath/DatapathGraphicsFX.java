@@ -521,6 +521,51 @@ public final class DatapathGraphicsFX {
         drawTextBold(gc, "M\ru\rx", x + width * 0.5, y + height * 0.5, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
         drawText(gc, "1", x + width * 0.5, y + height * 0.85, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
     }
+    public static void drawMemMux(GraphicsContext gc, double x, double y, double width, double height,
+                            boolean highlightTop, boolean highlightBottom) {
+
+        double radius = width / 2;
+        double topArcCenterY = y + radius;
+        double bottomArcCenterY = y + height - radius;
+
+        gc.setFill(highlightTop ? HighlightFill : muxFillColor);
+        gc.beginPath();
+        gc.moveTo(x, y + height / 2);
+        gc.lineTo(x, topArcCenterY);
+        gc.arc(x + radius, topArcCenterY, radius, radius, 180, -180);
+        gc.lineTo(x + width, y + height / 2);
+        gc.closePath();
+        gc.fill();
+
+        gc.setFill(highlightBottom ? HighlightFill : muxFillColor);
+        gc.beginPath();
+        gc.moveTo(x + width, y + height / 2);
+        gc.lineTo(x + width, bottomArcCenterY);
+        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, -180);
+        gc.lineTo(x, y + height / 2);
+        gc.closePath();
+        gc.fill();
+        
+        gc.setStroke(BLACK);
+        gc.setLineWidth(2);
+        gc.beginPath();
+        
+        gc.moveTo(x, y + height / 2);
+        gc.lineTo(x, topArcCenterY);
+        gc.arc(x + radius, topArcCenterY, radius, radius, 180, -180);
+        
+        gc.lineTo(x + width, bottomArcCenterY);
+        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, -180);
+        
+        gc.closePath();
+        
+        gc.stroke();
+
+        // Text
+        drawText(gc, "1", x + width * 0.5, y + height * 0.15, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+        drawTextBold(gc, "M\ru\rx", x + width * 0.5, y + height * 0.5, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+        drawText(gc, "0", x + width * 0.5, y + height * 0.85, BLACK, (int) (0.2 * height - 2), TextAlignment.CENTER);
+    }
     // HÀM VẼ CỔNG OR
     public static void drawOrGateHorizontal(GraphicsContext gc, double x, double y, double width, double height) {
         gc.setStroke(CONTROL_SIGNAL);
@@ -637,6 +682,16 @@ public final class DatapathGraphicsFX {
         drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, signExtendY + 0.5*ellipseHeight, highlight ? Highlight :BLACK, true, false); 
         drawRightArrow(gc, instrMemX + instrMemWidth + 0.8*pcWidth, signExtendY + 0.5*ellipseHeight, signExtendX, highlight ? Highlight : BLACK, false); // Shift Left 2 to Add Branch
     }
+
+    public static void drawInstrToBeforeSignExtend(GraphicsContext gc, boolean highlight) {
+        Color highlightColor = highlight ? HighlightText : BLACK;
+        drawText(gc, "Instruction\n [31 - 0]", instrMemX + 0.95 * instrMemWidth,  instrMemY + 0.45 * instrMemHeight, highlightColor, portFontSize, TextAlignment.RIGHT);
+        drawText(gc, "Instruction [31 - 0]", instrMemX + instrMemWidth + 0.9*pcWidth, signExtendY + signExtendHeight * 0.4, highlightColor, portFontSize, TextAlignment.LEFT);
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth, R_MAIN_PATH + 0.07 * height,instrMemX + instrMemWidth + 0.8*pcWidth, highlight ? Highlight :BLACK, false,true); 
+        drawVerticalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, R_MAIN_PATH + 0.07 * height, signExtendY + 0.5*ellipseHeight, highlight ? Highlight :BLACK, true, false); 
+        drawHorizontalSegment(gc, instrMemX + instrMemWidth + 0.8*pcWidth, signExtendY + 0.5*ellipseHeight,  signExtendX - 0.7*signExtendWidth, highlight ? Highlight : BLACK, false,true); // Shift Left 2 to Add Branch
+    }
+
     public static void drawInstrToRegRead1(GraphicsContext gc, boolean highlight) {
         Color highlightColor = highlight ? HighlightText : BLACK;
         drawText(gc, "Instruction\n [31 - 0]", instrMemX + 0.95 * instrMemWidth,  instrMemY + 0.45 * instrMemHeight, highlightColor, portFontSize, TextAlignment.RIGHT);
@@ -712,7 +767,7 @@ public final class DatapathGraphicsFX {
     {
         drawHorizontalSegment(gc, signExtendX + ellipseWidth, signExtendY + 0.5*ellipseHeight, muxAluInputX - muxWidth, highlight ? Highlight : BLACK, false, false);
         drawVerticalSegment(gc,  muxAluInputX - muxWidth, signExtendY + 0.5*ellipseHeight, muxAluInputY + 0.8*muxHeight, highlight ? Highlight : BLACK, false, false);
-        drawRightArrow(gc,  muxAluInputX - muxWidth, muxAluInputY + 0.8*muxHeight, muxAluInputX, highlight ? Highlight : BLACK, false); // Sign Extend to Shift Left 2
+        drawRightArrow(gc,  muxAluInputX - muxWidth, muxAluInputY + 0.8*muxHeight, muxAluInputX, highlight ? Highlight : BLACK, true); // Sign Extend to Shift Left 2
     }
 
         // Registers -> MUX ALU Input
@@ -729,7 +784,7 @@ public final class DatapathGraphicsFX {
         drawHorizontalSegment(gc, regX + rectWidth, muxAluInputY + 0.3 * muxHeight, regX + rectWidth * 1.1, highlight ? Highlight : BLACK, false, false);
         drawVerticalSegment(gc, regX + rectWidth * 1.1, muxAluInputY + 0.3 * muxHeight, dataMemY + 0.8 * dataMemHeight, highlight ? Highlight : BLACK, true, false);
         drawRightArrow(gc, regX + rectWidth * 1.1, dataMemY + 0.8 * dataMemHeight, dataMemX, highlight ? Highlight : BLACK, false);
-        drawText(gc, "Write\ndata", dataMemX + dataMemWidth * 0.05, dataMemY + dataMemHeight * 0.8, BLACK, portFontSize, TextAlignment.LEFT);
+        drawText(gc, "Write\ndata", dataMemX + dataMemWidth * 0.05, dataMemY + dataMemHeight * 0.8, colorText, portFontSize, TextAlignment.LEFT);
         drawText(gc, "Read\ndata 2", regX + regWidth *0.9  + 5, muxAluInputY + 0.3 * muxHeight, colorText, portFontSize, TextAlignment.RIGHT);
     }
 
