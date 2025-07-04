@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
@@ -18,6 +19,7 @@ import main.java.com.mydomain.legv8simulator.utils.BitUtils;
 
 public class InstructionMemoryWindow {
 
+    protected static int highlightedRow = -1;
     // Sử dụng SimulationManager để lấy dữ liệu
     private SimulationManager simManager;
     private boolean showBinary = false;
@@ -27,6 +29,7 @@ public class InstructionMemoryWindow {
         private String instruction;
         private String comment;
 
+        
 
         public Instruction(String addr, String instruction, String comment) {
             this.addr = addr;
@@ -51,6 +54,20 @@ public class InstructionMemoryWindow {
         commentCol.setCellValueFactory(new PropertyValueFactory<>("comment"));
         instrTable.getColumns().addAll(addrCol, instrCol, commentCol);
         instrTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        
+        // Đặt row factory cho TableView (chỉ cần gọi 1 lần, ví dụ trong constructor)
+        instrTable.setRowFactory(tv -> new TableRow<Instruction>() {
+            @Override
+            protected void updateItem(Instruction item, boolean empty) {
+                super.updateItem(item, empty);
+                if (!empty && getIndex() == InstructionMemoryWindow.highlightedRow) {
+                    setStyle("-fx-background-color: rgb(96, 155, 217);"); 
+                } else {
+                    setStyle(""); // reset style
+                }
+            }
+        });
     }
 
     public void addInstruction(String addr, String instr, String comment) {
@@ -88,38 +105,22 @@ public class InstructionMemoryWindow {
                 addr += 4;
             }
         }
+        highlightInstructionRow(simManager.getSimulator().cpu.getPC().getValue());
     }
 
-    public void highlightInstruction(long memoryAddress) {
-        // Địa chỉ trong bảng là số nguyên, được tính bằng cách chia cho 4 vì mỗi lệnh là 4 bytes.
-        int rowIndex = (int) (memoryAddress / 4);
 
-        // Đảm bảo rằng chỉ số hàng nằm trong phạm vi của bảng
+    // Hàm highlight không dùng selectionModel
+    public void highlightInstructionRow(long memoryAddress) {
+        int rowIndex = (int) (memoryAddress / 4);
         if (rowIndex >= 0 && rowIndex < instrTable.getItems().size()) {
-            // Sử dụng Platform.runLater để đảm bảo các thay đổi trên UI
-            // được thực hiện trên luồng JavaFX Application Thread.
-            // Điều này rất quan trọng nếu phương thức này được gọi từ một luồng khác
-            // (ví dụ: luồng mô phỏng).
-            javafx.application.Platform.runLater(() -> {
-                // Xóa lựa chọn cũ (nếu có) để tránh nhầm lẫn
-                instrTable.getSelectionModel().clearSelection();
-                
-                // Chọn (highlight) dòng mới
-                instrTable.getSelectionModel().select(rowIndex);
-                
-                // Cuộn TableView để dòng được chọn nằm trong tầm nhìn
-                instrTable.scrollTo(rowIndex);
-            });
+            highlightedRow = rowIndex;
+            instrTable.refresh(); // cập nhật lại TableView để áp dụng style
+            instrTable.scrollTo(rowIndex);
         } else {
-            // Nếu địa chỉ không hợp lệ (ví dụ: PC trỏ ra ngoài vùng code),
-            // thì chỉ cần xóa highlight cũ đi.
-            javafx.application.Platform.runLater(() -> {
-                instrTable.getSelectionModel().clearSelection();
-            });
-            System.err.println("Attempted to highlight an invalid instruction address: " + memoryAddress);
+            highlightedRow = -1;
+            instrTable.refresh();
         }
     }
-
     public void show() {
         simManager = SimulationManager.getInstance();
         

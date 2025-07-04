@@ -181,7 +181,7 @@ public class SimulatorApp extends Application {
 
          animController.fetchBtn.setOnAction(e -> {
             long row = simManager.getSimulator().cpu.getPC().getValue();
-            instrWin.highlightInstruction(row);
+            instrWin.highlightInstructionRow(row);
             textBlockController.simulateFetch(null);
             }
         );
