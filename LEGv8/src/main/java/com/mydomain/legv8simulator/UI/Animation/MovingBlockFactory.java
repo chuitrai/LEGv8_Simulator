@@ -96,7 +96,7 @@ public class MovingBlockFactory {
     public static MovingTextBlock instructionBus(LEGv8Datapath datapath, String instruction) {
         // This is a "bus" so it triggers multiple draw calls
         drawInstrToControl(datapath.gc, true);
-        // drawInstrToSignExtend(datapath.gc, true);
+        drawInstrToSignExtend(datapath.gc, true);
         drawInstrToRegRead1(datapath.gc, true);
         drawInstrToMuxReg0(datapath.gc, true);
         drawInstrToMuxReg1(datapath.gc, true);

@@ -29,9 +29,6 @@ public class SimulatorApp extends Application {
     
     // Sử dụng SimulationManager thay vì các biến riêng lẻ
     private SimulationManager simManager;
-    public static RegisterWindow regWin;
-    public static InstructionMemoryWindow instrWin;
-
     
     // Method để assembler có thể gọi từ TextFileEditor
 
@@ -177,7 +174,7 @@ public class SimulatorApp extends Application {
         animController.show();
 
         animController.writebackBtn.setOnAction(e -> {
-                textBlockController.simulateWriteback();
+                textBlockController.simulateWriteback(null);
                   regWin.updateRegisterWindow();
             }
         );
@@ -185,7 +182,7 @@ public class SimulatorApp extends Application {
          animController.fetchBtn.setOnAction(e -> {
             long row = simManager.getSimulator().cpu.getPC().getValue();
             instrWin.highlightInstruction(row);
-            textBlockController.simulateFetch();
+            textBlockController.simulateFetch(null);
             }
         );
     }

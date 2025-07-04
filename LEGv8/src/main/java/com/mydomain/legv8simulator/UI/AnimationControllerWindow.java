@@ -16,6 +16,9 @@ import javafx.util.Duration;
 import main.java.com.mydomain.legv8simulator.UI.Animation.TextBlockController;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
+import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.instrWin;
+import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.regWin;
+
 /**
  * Cửa sổ điều khiển mô phỏng, bao gồm cả việc kích hoạt các giai đoạn
  * và điều khiển toàn cục (play, pause, step, speed).
@@ -25,7 +28,7 @@ public class AnimationControllerWindow {
     public Stage stage;
     public TextBlockController textBlockController;
     public boolean isPaused = false;
-    public SimulationManager simManager;
+    public SimulationManager prevManager, simManager;
 
     // UI Controls - Global
     public Button playBtn, playPauseBtn, stepBtn, resetBtn;
@@ -34,7 +37,7 @@ public class AnimationControllerWindow {
 
     // UI Controls - Simulation Triggers
     public Button fetchBtn, decodeBtn, executeBtn, memoryBtn, writebackBtn;
-    public Button pipelineBtn, complexBtn;
+    public Button pipelineBtn, backBtn;
     
     // UI Controls - Status
     public Label statusLabel, activeBlocksLabel;
@@ -71,7 +74,7 @@ public class AnimationControllerWindow {
                 createSectionLabel("SINGLE CYCLE SIMULATION"),
                 simulationTriggers,
                 new Separator(),
-                createSectionLabel("OTHER SIMULATIONS"),
+                createSectionLabel("FUNCTION"),
                 otherSimulations,
                 statusBar
         );
@@ -142,12 +145,10 @@ public class AnimationControllerWindow {
     private HBox createOtherSimulationsPanel() {
         HBox panel = new HBox(10);
         panel.setAlignment(Pos.CENTER_LEFT);
-
-        pipelineBtn = createSimButton("Pipeline", "#16a085", 120);
-        complexBtn = createSimButton("Complex Path", "#e67e22", 120);
+        backBtn = createSimButton(" Back", "#e67e22", 120);
         resetBtn = createSimButton("Reset All", "#c0392b", 120);
 
-        panel.getChildren().addAll(pipelineBtn, complexBtn, resetBtn);
+        panel.getChildren().addAll(backBtn, resetBtn);
         return panel;
     }
 
@@ -198,7 +199,6 @@ public class AnimationControllerWindow {
             updateStatus("Đã reset tất cả mô phỏng.");
         });
 
-<<<<<<< HEAD
         fetchBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateFetch(null), "Đang mô phỏng FETCH..."));
         decodeBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateDecode(null), "Đang mô phỏng DECODE..."));
         executeBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateExecute(null), "Đang mô phỏng EXECUTE..."));
@@ -213,15 +213,6 @@ public class AnimationControllerWindow {
         if (isPaused) {
             togglePlayPause();
         }
-=======
-        // Simulation Triggers
-        fetchBtn.setOnAction(e -> runSimulation(textBlockController::simulateFetch, "Đang mô phỏng FETCH..."));
-        decodeBtn.setOnAction(e -> runSimulation(textBlockController::simulateDecode, "Đang mô phỏng DECODE..."));
-        executeBtn.setOnAction(e -> runSimulation(textBlockController::simulateExecute, "Đang mô phỏng EXECUTE..."));
-        memoryBtn.setOnAction(e -> runSimulation(textBlockController::simulateMemoryAccess, "Đang mô phỏng MEMORY..."));
-        writebackBtn.setOnAction(e -> runSimulation(textBlockController::simulateWriteback, "Đang mô phỏng WRITEBACK..."));
-        
->>>>>>> 1b3341c828bf2b0bd623d9aa89d89e98ba6ddfae
     }
     
     private void togglePlayPause() {
@@ -237,33 +228,37 @@ public class AnimationControllerWindow {
     }
 
     private void togglePlay() {
-        isPaused = false;
-        updateStatus("Bắt đầu Fetch...");
-        do {
-        textBlockController.simulateFetch(() -> {
-            updateStatus("Fetch xong. Bắt đầu Decode...");
-            
-            textBlockController.simulateDecode(() -> {
-                updateStatus("Decode xong. Bắt đầu Execute...");
-                
-                textBlockController.simulateExecute(() -> {
-                    updateStatus("Execute xong. Bắt đầu Memory Access...");
-                    
-                    textBlockController.simulateMemoryAccess(() -> {
-                        updateStatus("Memory Access xong. Bắt đầu Writeback...");
-                        
-                        textBlockController.simulateWriteback(() -> {
-                            updateStatus("Writeback xong. Kết thúc chu kỳ...");
-                        });
+    isPaused = false;
+    updateStatus("Bắt đầu Fetch...");
+    runCycle();
+    updatePlayPauseButtonState();
+}
+
+private void runCycle() {
+    regWin.updateRegisterWindow();
+    instrWin.loadInstructions();
+    textBlockController.simulateFetch(() -> {
+        updateStatus("Fetch xong. Bắt đầu Decode...");
+        textBlockController.simulateDecode(() -> {
+            updateStatus("Decode xong. Bắt đầu Execute...");
+            textBlockController.simulateExecute(() -> {
+                updateStatus("Execute xong. Bắt đầu Memory Access...");
+                textBlockController.simulateMemoryAccess(() -> {
+                    updateStatus("Memory Access xong. Bắt đầu Writeback...");
+                    textBlockController.simulateWriteback(() -> {
+                        updateStatus("Writeback xong. Kết thúc chu kỳ...");
+                        // Kiểm tra điều kiện lặp lại
+                        simManager = SimulationManager.getInstance();
+                        if (simManager.getSimulator().id_ex_latch != null) {
+                            // Gọi lại runCycle để lặp tiếp
+                            runCycle();
+                        }
                     });
                 });
             });
         });
-        simManager = SimulationManager.getInstance();
-        } while(simManager.getSimulator().id_ex_latch != null);
-        updatePlayPauseButtonState();
-    }
-    
+    });
+}
     private void updatePlayPauseButtonState() {
         if (isPaused) {
             playPauseBtn.setText("▶ Resume");

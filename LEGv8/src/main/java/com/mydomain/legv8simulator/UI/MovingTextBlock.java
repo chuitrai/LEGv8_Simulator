@@ -1,4 +1,4 @@
-package main.java.com.mydomain.legv8simulator.UI.Animation;
+package main.java.com.mydomain.legv8simulator.UI;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.geometry.Pos;
@@ -271,3 +271,4 @@ private void moveToNextSegment() {
         }
     }
 }
+
