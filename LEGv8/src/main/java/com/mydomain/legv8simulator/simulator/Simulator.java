@@ -1,7 +1,7 @@
 package main.java.com.mydomain.legv8simulator.simulator;
 
 import main.java.com.mydomain.legv8simulator.core.*;
-import main.java.com.mydomain.legv8simulator.gui.DatapathSnapshot_demo;
+import main.java.com.mydomain.legv8simulator.gui.DatapathSnapshot;
 import main.java.com.mydomain.legv8simulator.instruction.*;
 import main.java.com.mydomain.legv8simulator.simulator.pipeline.*;
 import main.java.com.mydomain.legv8simulator.utils.BitUtils;
@@ -16,23 +16,25 @@ import main.java.com.mydomain.legv8simulator.common.*;
  */
 public class Simulator extends Observable_demo {
 
-    private final CPU cpu;
-    private final Memory memory;
-    private final InstructionDecoder decoder;
-    private final ControlUnit controlUnit;
-    private final ALU alu;
+    public final CPU cpu;
+    public final Memory memory;
+    public final InstructionDecoder decoder;
+    public final ControlUnit controlUnit;
+    public final ALU alu;
+    public DatapathSnapshot snapshot;
 
     // Các chốt (latches) của pipeline
-    private IF_ID_Latch if_id_latch = new IF_ID_Latch(0, 0); // Khởi tạo NOP
-    private ID_EX_Latch id_ex_latch;
-    private EX_MEM_Latch ex_mem_latch;
-    private MEM_WB_Latch mem_wb_latch;
+    public IF_ID_Latch if_id_latch = new IF_ID_Latch(0, 0); // Khởi tạo NOP
+    public ID_EX_Latch id_ex_latch;
+    public EX_MEM_Latch ex_mem_latch;
+    public MEM_WB_Latch mem_wb_latch;
 
-    private boolean isRunning = false;
+    public boolean isRunning = false;
     private int clockCycleCount = 0;
 
     public Simulator(CPU cpu, Memory memory) {
         this.cpu = cpu;
+        System.out.println("Get value of CPU: " + cpu.getPC().getValue());
         this.memory = memory;
         this.decoder = new InstructionDecoder();
         this.controlUnit = new ControlUnit();
@@ -57,9 +59,16 @@ public class Simulator extends Observable_demo {
             System.out.println("Invalid step count. Please provide a positive integer.");
             return false;
         }
+        // System.out.println("\n//================== STEP " + step + " START ==================//");
         switch (step) {
             case 1:
                 doFetchStage();
+                // System.out.println("IF Stage completed.");
+                // if (if_id_latch != null) {
+                //     System.out.println("IF_ID_Latch: " + if_id_latch);
+                // } else {
+                //     System.out.println("IF_ID_Latch is NOP.");
+                // }
                 break;
             case 2:
                 doDecodeStage();
@@ -76,6 +85,7 @@ public class Simulator extends Observable_demo {
             default:
                 break;
         }
+        snapshot = createSnapshot();
         return true;
     }
 
@@ -109,9 +119,11 @@ public class Simulator extends Observable_demo {
         id_ex_latch = null;
         ex_mem_latch = null;
         mem_wb_latch = null;
+        System.out.println("***************** RESETTING SIMULATOR ****************");
         clockCycleCount = 0;
         isRunning = false;
-        notifyObservers(createSnapshot()); // Thông báo trạng thái reset
+        snapshot = createSnapshot();
+        System.out.println("Simulator reset. All latches cleared and CPU state reset.");
     }
 
     /**
@@ -121,8 +133,6 @@ public class Simulator extends Observable_demo {
      * đúng cách dữ liệu chảy qua pipeline trong một chu kỳ.
      */
     public void doFullClockCycle() {
-        if (!isRunning && clockCycleCount == 0) isRunning = true;
-        if (!isRunning) return;
 
         System.out.println("\n//================== CLOCK CYCLE " + (clockCycleCount + 1) + " START ==================//");
         
@@ -136,7 +146,7 @@ public class Simulator extends Observable_demo {
         cpu.printState();
 
         clockCycleCount++;
-        notifyObservers(createSnapshot());
+        snapshot = createSnapshot();
     }
 
 
@@ -237,6 +247,9 @@ public class Simulator extends Observable_demo {
             System.out.println("  -> EX Stage: Updating flags.");
             cpu.getFlagsRegister().updateFlags(aluResult);
         }
+
+        System.out.println("Control Signals: ");
+        id_ex_latch.controlSignals.printSignals();
     }
 
     private void doDecodeStage() {
@@ -303,6 +316,7 @@ public class Simulator extends Observable_demo {
     
     private void doFetchStage() {
         long currentPC = cpu.getPC().getValue();
+        System.out.println("Current PC: 0x" + Long.toHexString(currentPC));
         System.out.print("[-] IF Stage: ");
         if (!isRunning || currentPC >= memory.getSize()) {
             System.out.println("Stalling or finished.");
@@ -311,6 +325,7 @@ public class Simulator extends Observable_demo {
         }
 
         int machineCode = memory.loadWord(currentPC);
+        // memory.printMemory();
         System.out.printf("Fetching from PC 0x%X -> MC: 0x%08X\n", currentPC, machineCode);
         
         cpu.getPC().setValue(currentPC + 4);
@@ -320,7 +335,7 @@ public class Simulator extends Observable_demo {
     }
 
     // Hàm tạo snapshot
-    private DatapathSnapshot_demo createSnapshot() {
-        return new DatapathSnapshot_demo(if_id_latch, id_ex_latch, ex_mem_latch, mem_wb_latch);
+    public DatapathSnapshot createSnapshot() {
+        return new DatapathSnapshot(if_id_latch, id_ex_latch, ex_mem_latch, mem_wb_latch);
     }
 }

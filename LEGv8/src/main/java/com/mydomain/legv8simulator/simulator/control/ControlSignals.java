@@ -159,4 +159,23 @@ public final class ControlSignals {
                                       zeroBranch, flagWrite);
         }
     }
+    /**
+     * Trả về một chuỗi mô tả đầy đủ các tín hiệu điều khiển.
+     * Dùng cho mục đích debug và hiển thị thông tin.
+     * @return Chuỗi mô tả các tín hiệu điều khiển.
+     */
+    public void printSignals() {
+        System.out.println("  Reg2Loc: " + reg2Loc + "\n" +
+                           "  RegWrite: " + regWrite + "\n" +
+                           "  ALUSrc: " + aluSrc + "\n" +
+                           "  ALUOperation: " + aluOperation + "\n" +
+                           "  MemRead: " + memRead + "\n" +
+                           "  MemWrite: " + memWrite + "\n" +
+                           "  MemToReg: " + memToReg + "\n" +
+                           "  UncondBranch: " + uncondBranch + "\n" +
+                           "  FlagBranch: " + flagBranch + "\n" +
+                           "  ZeroBranch: " + zeroBranch + "\n" +
+                           "  FlagWrite: " + flagWrite
+                           );
+    }
 }

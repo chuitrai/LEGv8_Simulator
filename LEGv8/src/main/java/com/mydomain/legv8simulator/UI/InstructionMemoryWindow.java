@@ -101,7 +101,7 @@ public class InstructionMemoryWindow {
 
         // Thanh trạng thái vàng hiển thị comment
         Label status = new Label();
-        status.setStyle("-fx-background-color: yellow; -fx-font-size: 12px;");
+        status.setStyle("-fx-background-color: yellow; -fx-font-size: 12px; -fx-alignment: center;");
         status.setMaxWidth(Double.MAX_VALUE);
         status.setMinHeight(20);
 

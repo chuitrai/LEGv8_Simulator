@@ -1,11 +1,13 @@
 package main.java.com.mydomain.legv8simulator.UI;
 
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import main.java.com.mydomain.legv8simulator.utils.BitUtils;
 import main.java.com.mydomain.legv8simulator.utils.Constants;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
@@ -47,9 +49,26 @@ public class RegisterWindow {
     }
 
     public void show() {
-        VBox root = new VBox(regTable);
+                // Tiêu đề vàng
+        Label title = new Label("Registers");
+        title.setStyle("-fx-background-color: orange; -fx-font-weight: bold; -fx-font-size: 12px;");
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.setAlignment(javafx.geometry.Pos.CENTER);
+
+        // Thanh trạng thái vàng hiển thị comment
+        Label status = new Label();
+        status.setStyle("-fx-background-color: yellow; -fx-font-size: 12px; -fx-alignment: center;");
+        status.setMaxWidth(Double.MAX_VALUE);
+        status.setMinHeight(20);
+
+        regTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) status.setText(newVal.getDecVal());
+            else status.setText("");
+        });
+        VBox root = new VBox(title, regTable, status);
         Stage stage = new Stage();
         stage.setTitle("Registers");
+
         stage.setScene(new Scene(root, 300, 200));
         updateRegisterWindow(); // Cập nhật dữ liệu register
         stage.show();
@@ -59,12 +78,16 @@ public class RegisterWindow {
         // Cập nhật với dữ liệu thực từ CPU registers
         // Giả sử CPU có phương thức getRegister()
         simManager = SimulationManager.getInstance();
+        if (simManager == null || simManager.getCpu() == null) {
+            return; // Không có CPU để cập nhật
+        }
         regTable.getItems().clear();
         for (int i = 0; i < Constants.REGISTER_COUNT; i++) {
             String regName = "X" + i;
             String binVal = String.format("%08d", Long.parseLong(Long.toBinaryString(simManager.getCpu().getRegister(i))));
             addRegister(regName, binVal, String.valueOf(simManager.getCpu().getRegister(i)));
         }
+        addRegister("PC", String.format("0x%016X", simManager.getCpu().getPC().getValue()), String.valueOf(simManager.getCpu().getPC().getValue()));
     }
 
     public TableView<Register> getTable() {

@@ -347,4 +347,12 @@ public final class BitUtils {
         return ((number >> bitPosition) & 1) == 1;
     }
 
+    /**
+     * Chuyển đổi một giá trị integer thành chuỗi hex.
+     * @param value Giá trị integer.
+     * @return Chuỗi hex tương ứng.
+     */
+    public static String toHexString(int value) {
+        return String.format("0x%08X", value);
+    }
 }

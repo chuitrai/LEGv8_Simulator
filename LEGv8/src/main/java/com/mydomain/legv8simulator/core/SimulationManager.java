@@ -57,10 +57,7 @@ public class SimulationManager {
     
     // Reset toàn bộ hệ thống
     public void reset() {
-        initialize();
-        machineCode = null;
-        assemblyLines.clear();
-        currentFileName = null;
+        simulator.reset();
     }
     
     // =============== GETTERS ===============
@@ -138,9 +135,10 @@ public class SimulationManager {
      * Chạy simulation với số bước giới hạn
      */
     public boolean runSimulation(int maxSteps) {
-        if (!isLoaded) {
-            return false;
-        }
+        // if (!isLoaded) {
+        //     return false;
+        // }
+        System.out.println(" runSimulation was Run");
         
         try {
             this.isRunning = true;
@@ -158,14 +156,15 @@ public class SimulationManager {
      * Chạy một bước duy nhất
      */
     public boolean stepSimulation(int step) {
-        if (!isLoaded) {
-            return false;
-        }
+        // if (!isLoaded) {
+        //     return false;
+        // }
+        System.out.println(" stepSimulation was Run");
         
         try {
-            this.isRunning = true;
+            this.simulator.isRunning = true;
             boolean result = simulator.step(step); // Giả sử có method step()
-            this.isRunning = false;
+            this.simulator.isRunning = false;
             return result;
         } catch (Exception e) {
             this.isRunning = false;

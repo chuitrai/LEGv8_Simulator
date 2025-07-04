@@ -13,6 +13,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import main.java.com.mydomain.legv8simulator.UI.Animation.TextBlockController;
 import main.java.com.mydomain.legv8simulator.UI.datapath.LEGv8Datapath;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
@@ -47,7 +48,6 @@ public class SimulatorApp extends Application {
         
         Button btnStart = new Button("Start Simulation");
         btnStart.setId("start-button");
-        btnStart.setDisable(true); // Vô hiệu hóa cho đến khi file được chọn
 
         Button btnLoad = new Button("Select Assembly File");
         btnLoad.setId("file-button");
@@ -76,9 +76,25 @@ public class SimulatorApp extends Application {
         );
         
         final java.io.File[] selectedFile = {null};
+        java.io.File file = new java.io.File("resources/assembly_examples/example_1.s");
+        if (file != null) {
+                selectedFile[0] = file;
+                simManager.setCurrentFileName(file.getName());
+                fileLabel.setText("Selected: " + file.getName());
+                statusLabel.setText("File loaded. Please edit and assemble in editor.");
+                
+                // Hiển thị cửa sổ chỉnh sửa file và truyền callback với assembler
+                TextFileEditor.show(mainStage, file, (assembledCode, originalLines) -> {
+                    // Callback được gọi khi assemble thành công
+                    simManager.setMachineCode(assembledCode);
+                    simManager.setAssemblyLines(originalLines);
+                    statusLabel.setText("Assembly successful! Ready to simulate.");
+                    btnStart.setDisable(false); // Kích hoạt nút Start
+                }, simManager.getAssembler());
+            }
 
         btnLoad.setOnAction(e -> {
-            java.io.File file = fileChooser.showOpenDialog(mainStage);
+            // java.io.File file = fileChooser.showOpenDialog(mainStage);
             if (file != null) {
                 selectedFile[0] = file;
                 simManager.setCurrentFileName(file.getName());
@@ -93,6 +109,9 @@ public class SimulatorApp extends Application {
                     statusLabel.setText("Assembly successful! Ready to simulate.");
                     btnStart.setDisable(false); // Kích hoạt nút Start
                 }, simManager.getAssembler());
+            }
+            else {
+                showErrorDialog("File Error", "No file selected");
             }
         });
 
@@ -132,13 +151,22 @@ public class SimulatorApp extends Application {
         // Cập nhật với dữ liệu thực từ memory
         // updateInstructionWindow(instrWin);
         instrWin.show();
+        primaryStage.setX(500);
+        primaryStage.setY(100);
 
         // Mở cửa sổ datapath visualization
         LEGv8Datapath datapathPane = new LEGv8Datapath();
-        Scene scene = new Scene(datapathPane, 1200, 800);
+        Scene scene = new Scene(datapathPane, 900, 600);
+
+        TextBlockController textBlockController = new TextBlockController(datapathPane);
+
+
+        AnimationControllerWindow animController = new AnimationControllerWindow(textBlockController);
         primaryStage.setTitle("LEGv8 Datapath Visualization");
         primaryStage.setScene(scene);
         primaryStage.show();
+        animController.show();
+
     }
     
     
@@ -147,11 +175,11 @@ public class SimulatorApp extends Application {
     private void runSimulation() {
         try {
             // Chạy simulation với số bước giới hạn
-            if (simManager.runSimulation(100)) {
-                System.out.println("Simulation completed successfully!");
-            } else {
-                showErrorDialog("Simulation Error", "Failed to run simulation");
-            }
+            // if (simManager.runSimulation(1)) {
+            //     System.out.println("Simulation completed successfully!");
+            // } else {
+            //     showErrorDialog("Simulation Error", "Failed to run simulation");
+            // }
         } catch (Exception e) {
             System.err.println("Simulation error: " + e.getMessage());
             showErrorDialog("Simulation Error", "Error during simulation: " + e.getMessage());
