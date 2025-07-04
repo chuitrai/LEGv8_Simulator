@@ -57,7 +57,7 @@ public class InstructionMemoryWindow {
         instrTable.getItems().add(new Instruction(addr, instr, comment));
     }
 
-    private void loadInstructions() {
+    public void loadInstructions() {
 
         instrTable.getItems().clear();
 
@@ -87,6 +87,36 @@ public class InstructionMemoryWindow {
                 );
                 addr += 4;
             }
+        }
+    }
+
+    public void highlightInstruction(long memoryAddress) {
+        // Địa chỉ trong bảng là số nguyên, được tính bằng cách chia cho 4 vì mỗi lệnh là 4 bytes.
+        int rowIndex = (int) (memoryAddress / 4);
+
+        // Đảm bảo rằng chỉ số hàng nằm trong phạm vi của bảng
+        if (rowIndex >= 0 && rowIndex < instrTable.getItems().size()) {
+            // Sử dụng Platform.runLater để đảm bảo các thay đổi trên UI
+            // được thực hiện trên luồng JavaFX Application Thread.
+            // Điều này rất quan trọng nếu phương thức này được gọi từ một luồng khác
+            // (ví dụ: luồng mô phỏng).
+            javafx.application.Platform.runLater(() -> {
+                // Xóa lựa chọn cũ (nếu có) để tránh nhầm lẫn
+                instrTable.getSelectionModel().clearSelection();
+                
+                // Chọn (highlight) dòng mới
+                instrTable.getSelectionModel().select(rowIndex);
+                
+                // Cuộn TableView để dòng được chọn nằm trong tầm nhìn
+                instrTable.scrollTo(rowIndex);
+            });
+        } else {
+            // Nếu địa chỉ không hợp lệ (ví dụ: PC trỏ ra ngoài vùng code),
+            // thì chỉ cần xóa highlight cũ đi.
+            javafx.application.Platform.runLater(() -> {
+                instrTable.getSelectionModel().clearSelection();
+            });
+            System.err.println("Attempted to highlight an invalid instruction address: " + memoryAddress);
         }
     }
 

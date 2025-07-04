@@ -64,4 +64,19 @@ public final class ID_EX_Latch extends PipelineLatch {
         this.rd = rd;
         this.instruction = instruction;
     }
+
+    @Override
+    public void print() {
+        System.out.println("\nID_EX_Latch{\n" +
+                            "  pcIncremented=0x" + Long.toHexString(pcIncremented) + ",\n" +
+                            "  readData1=0x" + Long.toHexString(readData1) + ",\n" +
+                            "  readData2=0x" + Long.toHexString(readData2) + ",\n" +
+                            "  signExtendedImmediate=0x" + Long.toHexString(signExtendedImmediate) + ",\n" +
+                            "  rt=" + rt + ",\n" +
+                            "  rd=" + rd + ",\n" +
+                            "  instruction=" + instruction +
+                            "  \ncontrolSignals = \n");
+        controlSignals.printSignals();
+        System.out.println("}\n"); 
+    }
 }

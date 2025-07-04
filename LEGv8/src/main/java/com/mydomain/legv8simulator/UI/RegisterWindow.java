@@ -74,20 +74,20 @@ public class RegisterWindow {
         stage.show();
     }
 
-    private void updateRegisterWindow() {
+    public void updateRegisterWindow() {
         // Cập nhật với dữ liệu thực từ CPU registers
         // Giả sử CPU có phương thức getRegister()
         simManager = SimulationManager.getInstance();
-        if (simManager == null || simManager.getCpu() == null) {
+        if (simManager == null || simManager.getSimulator() == null) {
             return; // Không có CPU để cập nhật
         }
         regTable.getItems().clear();
         for (int i = 0; i < Constants.REGISTER_COUNT; i++) {
             String regName = "X" + i;
             String binVal = String.format("%08d", Long.parseLong(Long.toBinaryString(simManager.getCpu().getRegister(i))));
-            addRegister(regName, binVal, String.valueOf(simManager.getCpu().getRegister(i)));
+            addRegister(regName, binVal, String.valueOf(simManager.getSimulator().cpu.getRegister(i)));
         }
-        addRegister("PC", String.format("0x%016X", simManager.getCpu().getPC().getValue()), String.valueOf(simManager.getCpu().getPC().getValue()));
+        addRegister("PC", String.format("0x%016X", simManager.getSimulator().cpu.getPC().getValue()), String.valueOf(simManager.getCpu().getPC().getValue()));
     }
 
     public TableView<Register> getTable() {

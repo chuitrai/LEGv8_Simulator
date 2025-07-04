@@ -5,11 +5,11 @@ package main.java.com.mydomain.legv8simulator.core;
  * Nó chứa cả giá trị kết quả và các cờ trạng thái tương ứng.
  */
 public class ALUResult {
-    private final long result;
-    private final boolean flagN;
-    private final boolean flagZ;
-    private final boolean flagC;
-    private final boolean flagV;
+    public final long result;
+    public final boolean flagN;
+    public final boolean flagZ;
+    public final boolean flagC;
+    public final boolean flagV;
 
     public ALUResult(long result, boolean flagN, boolean flagZ, boolean flagC, boolean flagV) {
         this.result = result;
