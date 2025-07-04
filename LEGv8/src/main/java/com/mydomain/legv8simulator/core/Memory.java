@@ -159,4 +159,25 @@ public class Memory {
         }
         System.out.println("---------------------------------------------------------");
     }
+
+    public void printMemory() {
+        System.out.println("Memory Dump:");
+        for (int i = 0; i < data.length; i += 16) 
+        if (data[i] !=0 ){
+            StringBuilder sb = new StringBuilder(String.format("0x%08X: ", i));
+            for (int j = 0; j < 16; j++) {
+                if (i + j < data.length) {
+                    sb.append(String.format("%02X ", data[i + j]));
+                } else {
+                    sb.append("   ");
+                }
+            }
+            sb.append(" | ");
+            for (int j = 0; j < 16 && i + j < data.length; j++) {
+                char c = (char) (data[i + j] & 0xFF);
+                sb.append((c >= 32 && c <= 126) ? c : '.');
+            }
+            System.out.println(sb.toString());
+        }
+    }
 }

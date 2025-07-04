@@ -107,7 +107,7 @@ public class Assembler {
             ParsedInstruction pInstr = result.getInstruction().get();
             int encodedInstruction = encodeInstruction(pInstr, currentAddress);
             // in ra thông tin mã máy đã được mã hóa
-            System.out.println("Encoded instruction: " + pInstr.getMnemonic() + " -> " + encodedInstruction + " at address 0x" + Integer.toHexString(currentAddress).toUpperCase());
+            System.out.println("Encoded instruction: " + pInstr.getMnemonic() + " -> " + BitUtils.toHexString(encodedInstruction) + " at address 0x" + Integer.toHexString(currentAddress).toUpperCase());
             machineCodeList.add(encodedInstruction);
             currentAddress += 4;
         }

@@ -51,6 +51,8 @@ public class AnimationControllerWindow {
         stage = new Stage();
         stage.setTitle("Simulation Controller");
         stage.setResizable(true);
+        stage.setX(100);
+        stage.setY(200);
 
         VBox root = new VBox(15);
         root.setPadding(new Insets(15));
@@ -188,6 +190,8 @@ public class AnimationControllerWindow {
         
         resetBtn.setOnAction(e -> {
             textBlockController.clearAllBlocks();
+            simManager = SimulationManager.getInstance();
+            simManager.reset();
 
             isPaused = false;
             updatePlayPauseButtonState();

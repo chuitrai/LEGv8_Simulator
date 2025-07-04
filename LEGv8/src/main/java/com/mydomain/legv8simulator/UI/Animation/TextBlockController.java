@@ -32,19 +32,22 @@ public class TextBlockController extends StackPane{
     public int getActiveBlockCount() {
         return activeBlocks.size();
     }
-public void simulateFetch() {
+    public void simulateFetch() {
+        // Lấy địa chỉ PC hiện tại từ SimulationManager
+        this.clearAllBlocks();
+        System.out.println(" ============== START FETCH STAGE ============");
         simManager = SimulationManager.getInstance();
-        simManager.stepSimulation(1);
-        simManager = SimulationManager.getInstance();
-
-        String adrr = String.format("0x%04X", simManager.getCpu().getPC().getValue());
+        String adrr = String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue());
+        System.out.println("initial Address: " + adrr);
         addAndStartBlock(MovingBlockFactory.pcToInstructionMemory(datapath, adrr));
 
         MovingTextBlock pcToAdd4Block = MovingBlockFactory.pcToAdd4(datapath, adrr);
         pcToAdd4Block.setOnPathCompleted(() -> {
             MovingTextBlock const4Block = MovingBlockFactory.constant4ToAdd4(datapath);
             const4Block.setOnPathCompleted(() -> {
-                String newAddr = String.format("0x%04X", simManager.getCpu().getPC().getValue() + 4);
+                simManager.stepSimulation(1);
+                simManager= SimulationManager.getInstance();
+                String newAddr = String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue());
                 addAndStartBlock(MovingBlockFactory.add4ResultToMux(datapath, newAddr));
             });
             addAndStartBlock(const4Block);
@@ -53,8 +56,11 @@ public void simulateFetch() {
     }
 
     public void simulateDecode() {
+        this.clearAllBlocks();
+        System.out.println(" ============== START DECODE STAGE ============");
         simManager = SimulationManager.getInstance();
-        int instr = simManager.getMachineCode()[simManager.getCurrentPC() / 4];
+        simManager.stepSimulation(2);
+        int instr = simManager.getSimulator().snapshot.if_id_latch.instructionMachineCode;
 
         MovingTextBlock instructionBus = MovingBlockFactory.instructionBus(datapath, BitUtils.toBinaryString32(instr));
 
@@ -71,19 +77,25 @@ public void simulateFetch() {
     }
 
     public void simulateExecute() {
+        this.clearAllBlocks();
+        System.out.println(" ============== START EXECUTE STAGE ============");
+        simManager = SimulationManager.getInstance();
+        // Lấy id_ex_latch từ SimulationManager
+        simManager.stepSimulation(3);
+        var id_ex_latch = simManager.getSimulator().id_ex_latch;
         // Simulate control signals
         drawControlText(datapath.gc, true);
-        addAndStartBlock(MovingBlockFactory.reg2LocSignal(datapath, "1"));
-        addAndStartBlock(MovingBlockFactory.uncondBranchSignal(datapath, "1"));
-        addAndStartBlock(MovingBlockFactory.flagBranchSignal(datapath, "1"));
-        addAndStartBlock(MovingBlockFactory.zeroBranchSignal(datapath, "0"));
-        addAndStartBlock(MovingBlockFactory.memReadSignal(datapath, "0"));
-        addAndStartBlock(MovingBlockFactory.memToRegSignal(datapath, "1"));
-        addAndStartBlock(MovingBlockFactory.memWriteSignal(datapath, "1"));
-        addAndStartBlock(MovingBlockFactory.flagWriteSignal(datapath, "1"));
-        addAndStartBlock(MovingBlockFactory.aluSrcSignal(datapath, "0"));
-        addAndStartBlock(MovingBlockFactory.aluOpSignal(datapath, "0"));
-        addAndStartBlock(MovingBlockFactory.regWriteSignal(datapath, "1"));
+        addAndStartBlock(MovingBlockFactory.reg2LocSignal(datapath, id_ex_latch.controlSignals.reg2Loc ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.uncondBranchSignal(datapath, id_ex_latch.controlSignals.uncondBranch ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.flagBranchSignal(datapath, id_ex_latch.controlSignals.flagBranch ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.zeroBranchSignal(datapath, id_ex_latch.controlSignals.zeroBranch ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.memReadSignal(datapath, id_ex_latch.controlSignals.memRead ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.memToRegSignal(datapath, id_ex_latch.controlSignals.memToReg ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.memWriteSignal(datapath, id_ex_latch.controlSignals.memWrite ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.flagWriteSignal(datapath, id_ex_latch.controlSignals.flagWrite ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.aluSrcSignal(datapath, id_ex_latch.controlSignals.aluSrc ? "1" : "0"));
+        addAndStartBlock(MovingBlockFactory.aluOpSignal(datapath, id_ex_latch.controlSignals.aluOperation.toString()));
+        addAndStartBlock(MovingBlockFactory.regWriteSignal(datapath, id_ex_latch.controlSignals.regWrite ? "1" : "0"));
         
         // Simulate data paths
         addAndStartBlock(MovingBlockFactory.opcodeToALUControl(datapath, "Instr"));
