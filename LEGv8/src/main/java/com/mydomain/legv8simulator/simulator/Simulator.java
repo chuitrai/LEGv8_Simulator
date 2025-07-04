@@ -205,7 +205,7 @@ public class Simulator extends Observable_demo {
     }
 
     private void doExecuteStage() {
-        System.out.print("[-] EX Stage: ");
+        System.out.print("[-] EX Stage: \n");
         if (id_ex_latch == null) {
             System.out.println("NOP");
             ex_mem_latch = null; // Chuyển NOP đi tiếp
@@ -225,6 +225,9 @@ public class Simulator extends Observable_demo {
         long aluInput2 = id_ex_latch.controlSignals.aluSrc ? 
                         id_ex_latch.signExtendedImmediate : 
                         id_ex_latch.readData2;
+
+        System.out.println("ReadData1 (Rn): 0x" + Long.toHexString(aluInput1) + 
+                           ", ReadData2 (Rm): 0x" + Long.toHexString(aluInput2));
         
         ALUOperation op = id_ex_latch.controlSignals.aluOperation;
         ALUResult aluResult = alu.execute(op, aluInput1, aluInput2);
@@ -238,6 +241,15 @@ public class Simulator extends Observable_demo {
         
         System.out.println();
         
+        // Update 4 cờ trạng thái nếu lệnh yêu cầu
+        if (id_ex_latch.controlSignals.flagWrite) {
+            System.out.println("  -> EX Stage: Updating flags.");
+            cpu.getFlagsRegister().updateFlags(aluResult);
+        } else {
+            System.out.println("  -> EX Stage: No flag update required.");
+        }
+
+
         ex_mem_latch = new EX_MEM_Latch(id_ex_latch.controlSignals, 
                                         aluResult.getResult(), 
                                         id_ex_latch.readData2, 
@@ -302,16 +314,23 @@ public class Simulator extends Observable_demo {
         long readData1 = cpu.getRegisterFile().read(rn);
         long readData2 = cpu.getRegisterFile().read(rm);
 
-        if (instr instanceof DFormatInstruction) { // Chỉ lệnh Store mới đọc dữ liệu để ghi
-            readData2 = imm; // Đối với lệnh Store, readData2 là địa chỉ cần ghi
+        if (signals.reg2Loc) {
+            readData2 = cpu.getRegisterFile().read(rt); // Nếu reg2Loc là true, sử dụng immediate thay vì Rm
+            System.out.println("Using Rt (X" + rt + ") as ReadData2 instead of Rm (X" + rm + ").");
         }
+        System.out.println(signals.reg2Loc ? "YES" : "NO");
+
+        id_ex_latch = new ID_EX_Latch(signals, if_id_latch.pcIncremented, readData1, readData2, imm, rt, rd, instr);
+
 
         System.out.println("Decoded instruction: " + instr.getOpcodeMnemonic() + 
                            " (Rd: X" + rd + ", Rn: X" + rn + ", Rm: X" + rm + 
                            ", Rt: X" + rt + ", Imm: 0x" + Long.toHexString(imm) + ")");
 
         System.out.println(instr.toString());
-        id_ex_latch = new ID_EX_Latch(signals, if_id_latch.pcIncremented, readData1, readData2, imm, rt, rd, instr);
+        System.out.println("-->ReadData1: 0x" + Long.toHexString(readData1) + 
+                           ", ReadData2: 0x" + Long.toHexString(readData2) + 
+                           ", SignExtendedImm: 0x" + Long.toHexString(imm));
     }
     
     private void doFetchStage() {

@@ -46,8 +46,20 @@ public final class ControlSignals {
      * Giúp ALU Control quyết định phép toán cuối cùng.
      * Ví dụ: 00 (L/S), 01 (Branch), 10 (R-Type).
      */
-     public final ALUOperation aluOperation;
+    public final ALUOperation aluOperation;
 
+    /**
+     * ALUOp: Biến tĩnh để lưu trữ giá trị của ALUOp.
+     * Sử dụng trong quá trình xử lý lệnh để xác định phép toán ALU.
+     * Giá trị này sẽ được cập nhật bởi Control Unit dựa trên lệnh hiện tại.
+     */
+    public final int aluOp;
+
+    /**
+     * ALUControl: Tín hiệu điều khiển ALU, xác định phép toán cụ thể.
+     * Sử dụng hàm ControlALU để chuyển đổi từ ALUOp sang ALUControl.
+     */
+    public final int aluControl; 
 
     // --- Tín hiệu cho Memory ---
 
@@ -97,13 +109,15 @@ public final class ControlSignals {
      */
     public final boolean flagWrite;
 
+    
+
 
     /**
      * Constructor để tạo một bộ tín hiệu điều khiển đầy đủ.
      * Sử dụng Builder Pattern được khuyến khích để khởi tạo.
      */
     public ControlSignals(boolean reg2Loc, boolean regWrite, boolean aluSrc,  ALUOperation aluOperation,
-                          boolean memRead, boolean memWrite, boolean memToReg,
+                          int aluOp, int aluControl, boolean memRead, boolean memWrite, boolean memToReg, 
                           boolean uncondBranch, boolean flagBranch, boolean zeroBranch, boolean flagWrite) {
         this.reg2Loc = reg2Loc;
         this.regWrite = regWrite;
@@ -116,6 +130,8 @@ public final class ControlSignals {
         this.flagBranch = flagBranch;
         this.zeroBranch = zeroBranch;
         this.flagWrite = flagWrite;
+        this.aluOp = aluOp; // Lưu giá trị ALUOp
+        this.aluControl = aluControl; // Lưu giá trị ALUControl
     }
 
     /**
@@ -125,6 +141,7 @@ public final class ControlSignals {
         private ALUOperation aluOperation = ALUOperation.ADD;
         private boolean reg2Loc, regWrite, aluSrc, memRead, memWrite, memToReg;
         private boolean uncondBranch, flagBranch, zeroBranch, flagWrite;
+        private int aluOp = 10, aluControl = 10; // Biến tĩnh để lưu trữ giá trị của ALUOp
 
         // Thiết lập các giá trị mặc định (tương ứng với lệnh NOP)
         public Builder() {
@@ -132,6 +149,7 @@ public final class ControlSignals {
             this.regWrite = false;
             this.aluSrc = false;
             this.aluOperation = ALUOperation.ADD; // Mặc định là ADD, có thể thay đổi sau
+            this.aluOp = 10;
             this.memRead = false;
             this.memWrite = false;
             this.memToReg = false;
@@ -139,12 +157,13 @@ public final class ControlSignals {
             this.flagBranch = false;
             this.zeroBranch = false;
             this.flagWrite = false;
+            this.aluControl = 10; // Mặc định là 0, có thể thay đổi sau
         }
 
         public Builder reg2Loc(boolean val) { this.reg2Loc = val; return this; }
         public Builder regWrite(boolean val) { this.regWrite = val; return this; }
         public Builder aluSrc(boolean val) { this.aluSrc = val; return this; }
-         public Builder aluOperation(ALUOperation val) { this.aluOperation = val; return this; }
+        public Builder aluOperation(ALUOperation val) { this.aluOperation = val; return this; }
         public Builder memRead(boolean val) { this.memRead = val; return this; }
         public Builder memWrite(boolean val) { this.memWrite = val; return this; }
         public Builder memToReg(boolean val) { this.memToReg = val; return this; }
@@ -152,11 +171,14 @@ public final class ControlSignals {
         public Builder flagBranch(boolean val) { this.flagBranch = val; return this; }
         public Builder zeroBranch(boolean val) { this.zeroBranch = val; return this; }
         public Builder flagWrite(boolean val) { this.flagWrite = val; return this; }
+        public Builder aluOp(int val) { this.aluOp = val; return this; }
+        public Builder aluControl(int val) { this.aluControl = val; return this; }
 
         public ControlSignals build() {
-            return new ControlSignals(reg2Loc, regWrite, aluSrc, aluOperation, memRead,
-                                      memWrite, memToReg, uncondBranch, flagBranch,
-                                      zeroBranch, flagWrite);
+            return new ControlSignals(reg2Loc, regWrite, aluSrc, 
+                                    aluOperation, aluOp, aluControl,
+                                    memRead,memWrite, memToReg, uncondBranch, 
+                                    flagBranch, zeroBranch, flagWrite);
         }
     }
     /**
@@ -164,18 +186,22 @@ public final class ControlSignals {
      * Dùng cho mục đích debug và hiển thị thông tin.
      * @return Chuỗi mô tả các tín hiệu điều khiển.
      */
+
     public void printSignals() {
         System.out.println("  Reg2Loc: " + reg2Loc + "\n" +
-                           "  RegWrite: " + regWrite + "\n" +
-                           "  ALUSrc: " + aluSrc + "\n" +
-                           "  ALUOperation: " + aluOperation + "\n" +
-                           "  MemRead: " + memRead + "\n" +
-                           "  MemWrite: " + memWrite + "\n" +
-                           "  MemToReg: " + memToReg + "\n" +
-                           "  UncondBranch: " + uncondBranch + "\n" +
-                           "  FlagBranch: " + flagBranch + "\n" +
-                           "  ZeroBranch: " + zeroBranch + "\n" +
-                           "  FlagWrite: " + flagWrite
-                           );
+                            "  RegWrite: " + regWrite + "\n" +
+                            "  ALUSrc: " + aluSrc + "\n" +
+                            "  ALUOperation: " + aluOperation + "\n" +
+                            "  MemRead: " + memRead + "\n" +
+                            "  MemWrite: " + memWrite + "\n" +
+                            "  MemToReg: " + memToReg + "\n" +
+                            "  UncondBranch: " + uncondBranch + "\n" +
+                            "  FlagBranch: " + flagBranch + "\n" +
+                            "  ZeroBranch: " + zeroBranch + "\n" +
+                            "  FlagWrite: " + flagWrite + "\n" +
+                            "  ALUOp: " + aluOp + "\n" +
+                            "  ALUControl: " + aluControl + "\n"
+                            );
     }
+
 }
