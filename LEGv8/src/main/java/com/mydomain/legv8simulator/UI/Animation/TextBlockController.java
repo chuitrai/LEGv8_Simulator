@@ -13,15 +13,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.drawControlText;
+import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
 
 public class TextBlockController extends StackPane {
 
     public LEGv8Datapath datapath;
-    private List<MovingTextBlock> activeBlocks;
+    public List<MovingTextBlock> activeBlocks;
+
     private SimulationManager simManager;
-    // Các biến endStage, notifyEndStage, stageCompleted không còn cần thiết
-    // khi dùng callback trực tiếp.
+    private double currentRate = 1.0; // Tốc độ mặc định là 1x
+
+    public static List<MovingTextBlock> FetchBlocks = new ArrayList<>();
+    public static List<MovingTextBlock> DecodeBlocks = new ArrayList<>();
+    public static List<MovingTextBlock> ExecuteBlocks = new ArrayList<>();
+    public static List<MovingTextBlock> MemoryBlocks = new ArrayList<>();
+    public static List<MovingTextBlock> WritebackBlocks = new ArrayList<>();
 
     public TextBlockController(LEGv8Datapath datapath) {
         this.datapath = datapath;
@@ -36,65 +42,87 @@ public class TextBlockController extends StackPane {
     // CÁC HÀM SIMULATE ĐƯỢC TÁI CẤU TRÚC VỚI RUNNABLE ONDONE (ĐẦY ĐỦ)
     // =======================================================================
 
-    public void simulateFetch(Runnable onDone) {
-        clearAllBlocks();
+public void simulateFetch(Runnable onDone) {
+    clearAllBlocks();
+    FetchBlocks.clear();
+    DecodeBlocks.clear();
+    ExecuteBlocks.clear();
+    MemoryBlocks.clear();
+    WritebackBlocks.clear();
         System.out.println("============== START FETCH STAGE ============");
-        simManager = SimulationManager.getInstance();
-        String adrr = String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue());
-        simManager.stepSimulation(1); // Chạy logic trước
-        simManager = SimulationManager.getInstance();
+    drawPC(datapath.gc, true);
+    simManager = SimulationManager.getInstance();
+    String adrr = String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue());
+    simManager.stepSimulation(1); // Chạy logic trước
+    simManager = SimulationManager.getInstance();
 
-        MovingTextBlock pcToIMBlock = MovingBlockFactory.pcToInstructionMemory(datapath, adrr);
-        MovingTextBlock pcToAdd4Block = MovingBlockFactory.pcToAdd4(datapath, adrr);
+    MovingTextBlock pcToIMBlock = MovingBlockFactory.pcToInstructionMemory(datapath, adrr);
+    MovingTextBlock pcToAdd4Block = MovingBlockFactory.pcToAdd4(datapath, adrr);
 
-        AtomicInteger completionCounter = new AtomicInteger(0);
-        final int TOTAL_TASKS = 2; // Một cho pcToIM, một cho luồng PC+4
-        Runnable onSubTaskDone = () -> {
-            if (completionCounter.incrementAndGet() == TOTAL_TASKS && onDone != null) {
-                onDone.run();
-            }
-        };
+    // Thêm vào FetchBlocks
+    FetchBlocks.add(pcToIMBlock);
+    FetchBlocks.add(pcToAdd4Block);
 
-        pcToIMBlock.setOnPathCompleted(onSubTaskDone);
+    AtomicInteger completionCounter = new AtomicInteger(0);
+    final int TOTAL_TASKS = 2; // Một cho pcToIM, một cho luồng PC+4
+    Runnable onSubTaskDone = () -> {
+        if (completionCounter.incrementAndGet() == TOTAL_TASKS && onDone != null) {
+            onDone.run();
+        }
+    };
 
-        pcToAdd4Block.setOnPathCompleted(() -> {
-            MovingTextBlock const4Block = MovingBlockFactory.constant4ToAdd4(datapath);
-            const4Block.setOnPathCompleted(() -> {
-                String newAddr = String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue());
-                MovingTextBlock resultBlock = MovingBlockFactory.add4ResultToMux(datapath, newAddr);
-                resultBlock.setOnPathCompleted(onSubTaskDone); // Luồng PC+4 hoàn thành
-                addAndStartBlock(resultBlock);
-            });
-            addAndStartBlock(const4Block);
+    pcToIMBlock.setOnPathCompleted(onSubTaskDone);
+
+    pcToAdd4Block.setOnPathCompleted(() -> {
+        MovingTextBlock const4Block = MovingBlockFactory.constant4ToAdd4(datapath);
+        drawAdd4Block(datapath.gc, true);
+        // Thêm vào FetchBlocks
+        FetchBlocks.add(const4Block);
+
+        const4Block.setOnPathCompleted(() -> {
+            String newAddr = String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue());
+            MovingTextBlock resultBlock = MovingBlockFactory.add4ResultToMux(datapath, newAddr);
+            // Thêm vào FetchBlocks
+            FetchBlocks.add(resultBlock);
+
+            resultBlock.setOnPathCompleted(onSubTaskDone); // Luồng PC+4 hoàn thành
+            addAndStartBlock(resultBlock);
         });
+        addAndStartBlock(const4Block);
+    });
 
-        addAndStartBlock(pcToIMBlock);
-        addAndStartBlock(pcToAdd4Block);
-    }
+    addAndStartBlock(pcToIMBlock);
+    addAndStartBlock(pcToAdd4Block);
+}
 
-    public void simulateDecode(Runnable onDone) {
-        // this.clearAllBlocks(); // Không clear giữa các giai đoạn trong pipeline
-        System.out.println("============== START DECODE STAGE ============");
-        simManager = SimulationManager.getInstance();
-        simManager.stepSimulation(2);
-        int instr = simManager.getSimulator().snapshot.if_id_latch.instructionMachineCode;
+public void simulateDecode(Runnable onDone) {
+    System.out.println("============== START DECODE STAGE ============");
+    simManager = SimulationManager.getInstance();
+    simManager.stepSimulation(2);
+    int instr = simManager.getSimulator().snapshot.if_id_latch.instructionMachineCode;
+    drawInstructionMemory(datapath.gc, true);
+    MovingTextBlock instructionBus = MovingBlockFactory.instructionBus(datapath, BitUtils.toBinaryString32(instr));
 
-        MovingTextBlock instructionBus = MovingBlockFactory.instructionBus(datapath, BitUtils.toBinaryString32(instr));
+    // Thêm vào DecodeBlocks
+    DecodeBlocks.add(instructionBus);
 
-        instructionBus.setOnPathCompleted(() -> {
-            List<MovingTextBlock> decodedBlocks = List.of(
-                MovingBlockFactory.opcodeToControl(BitUtils.toBinaryString(instr, 21, 31)),
-                MovingBlockFactory.rnToRegisterFile(BitUtils.toBinaryString(instr, 5, 9)),
-                MovingBlockFactory.rmToMuxRegInput(BitUtils.toBinaryString(instr, 16, 20)),
-                MovingBlockFactory.rtToRegisterFile(BitUtils.toBinaryString(instr, 0, 4)),
-                MovingBlockFactory.rdToMuxWriteReg(BitUtils.toBinaryString(instr, 0, 4)),
-                MovingBlockFactory.immediateToSignExtend(BitUtils.toBinaryString(instr, 21, 31) + "...")
-            );
-            runBlocksInParallel(decodedBlocks, onDone);
-        });
+    instructionBus.setOnPathCompleted(() -> {
+        List<MovingTextBlock> decodedBlocks = List.of(
+            MovingBlockFactory.opcodeToControl(BitUtils.toBinaryString(instr, 21, 31)),
+            MovingBlockFactory.rnToRegisterFile(BitUtils.toBinaryString(instr, 5, 9)),
+            MovingBlockFactory.rmToMuxRegInput(BitUtils.toBinaryString(instr, 16, 20)),
+            MovingBlockFactory.rtToRegisterFile(BitUtils.toBinaryString(instr, 0, 4)),
+            MovingBlockFactory.rdToMuxWriteReg(BitUtils.toBinaryString(instr, 0, 4)),
+            MovingBlockFactory.immediateToSignExtend(BitUtils.toBinaryString(instr, 21, 31) + "...")
+        );
+        // Thêm tất cả vào DecodeBlocks
+        DecodeBlocks.addAll(decodedBlocks);
+        runBlocksInParallel(decodedBlocks, onDone);
+    });
 
-        addAndStartBlock(instructionBus);
-    }
+    addAndStartBlock(instructionBus);
+}
+
 
     public void simulateExecute(Runnable onDone) {
         // this.clearAllBlocks();
@@ -113,7 +141,7 @@ public class TextBlockController extends StackPane {
         drawControlText(datapath.gc, true);
         int instr = simManager.getSimulator().snapshot.if_id_latch.instructionMachineCode;
         id_ex_latch.print();
-
+        
         List<MovingTextBlock> blocksInStage = List.of(
             // Control Signals
             MovingBlockFactory.reg2LocSignal(datapath, id_ex_latch.controlSignals.reg2Loc ? "1" : "0"),
@@ -147,64 +175,116 @@ public class TextBlockController extends StackPane {
             MovingBlockFactory.flagToAndGate(datapath, (simManager.getSimulator().cpu.getFlagsRegister().isN() ? "[1]" : "[0]") + (simManager.getSimulator().cpu.getFlagsRegister().isC() ? "[1]" : "[0]") + (simManager.getSimulator().cpu.getFlagsRegister().isV() ? "[1]" : "[0]")),
             MovingBlockFactory.orResultToMux(datapath, (((simManager.getSimulator().cpu.getFlagsRegister().isN() && id_ex_latch.controlSignals.flagBranch) || (simManager.getSimulator().cpu.getFlagsRegister().isC() && id_ex_latch.controlSignals.flagBranch) || (simManager.getSimulator().cpu.getFlagsRegister().isV() && id_ex_latch.controlSignals.flagBranch)) || (id_ex_latch.controlSignals.uncondBranch) || (simManager.getSimulator().cpu.getFlagsRegister().isZ() && id_ex_latch.controlSignals.zeroBranch)) ? "1" : "0"),
             MovingBlockFactory.aluControlToALU(datapath, BitUtils.toBinaryString(simManager.getSimulator().snapshot.id_ex_latch.controlSignals.aluControl, 0, 3)),
-            MovingBlockFactory.branchAdderToMux(datapath, "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(BitUtils.signExtend64(instr, 31) + simManager.getSimulator().cpu.getPC().getValue()), 0, 7))
+            MovingBlockFactory.branchAdderToMux(datapath, "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(BitUtils.signExtend64(instr, 31) + simManager.getSimulator().cpu.getPC().getValue()), 0, 7)),
+            MovingBlockFactory.muxResultToPC(datapath, 
+            (((simManager.getSimulator().cpu.getFlagsRegister().isN() && id_ex_latch.controlSignals.flagBranch) 
+            || (simManager.getSimulator().cpu.getFlagsRegister().isC() && id_ex_latch.controlSignals.flagBranch) 
+            || (simManager.getSimulator().cpu.getFlagsRegister().isV() && id_ex_latch.controlSignals.flagBranch)) 
+            || (id_ex_latch.controlSignals.uncondBranch) 
+            || (simManager.getSimulator().cpu.getFlagsRegister().isZ() && id_ex_latch.controlSignals.zeroBranch)) ?  
+            "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(BitUtils.signExtend64(instr, 31) + simManager.getSimulator().if_id_latch.pcIncremented), 0, 7) 
+            : String.format("0x%04X", simManager.getSimulator().cpu.getPC().getValue()))
         );
-        
+        // Thêm tất cả vào ExecuteBlocks
+        ExecuteBlocks.addAll(blocksInStage);
         runBlocksInParallel(blocksInStage, onDone);
-    }
-
-    public void simulateMemoryAccess(Runnable onDone) {
-        // this.clearAllBlocks();
-        System.out.println("============== START MEMORY STAGE ============");
-        simManager = SimulationManager.getInstance();
-        simManager.stepSimulation(4);
-        simManager = SimulationManager.getInstance();
-        var ex_mem_latch = simManager.getSimulator().ex_mem_latch;
-
-        // Chỉ mô phỏng STORE vì code gốc đã comment phần LOAD
-        String address = "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(ex_mem_latch.aluResult), 0, 15);
-        String data = "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(ex_mem_latch.dataToWriteToMemory), 0, 15);
         
-        List<MovingTextBlock> blocksInStage = List.of(
-            MovingBlockFactory.aluToMemoryAddress(datapath, address),
-            MovingBlockFactory.writeDataToMemory(datapath, data)
-        );
-        
-        runBlocksInParallel(blocksInStage, onDone);
+        drawSignExtend(datapath.gc, true);
+        drawAluControl(datapath.gc, true);
+        drawMux(datapath.gc, muxRegInputX, muxRegInputY, muxWidth, muxHeight, id_ex_latch.controlSignals.reg2Loc ? false : true, id_ex_latch.controlSignals.reg2Loc ? true : false); // MUX Register Input
+        if(id_ex_latch.controlSignals.aluSrc) {
+            drawMux(datapath.gc,muxAluInputX, muxAluInputY, muxWidth, muxHeight, false, true); // MUX ALU Source
+        } else {
+            drawMux(datapath.gc, muxAluInputX, muxAluInputY, muxWidth, muxHeight, true, false); // MUX ALU Source
+        }
+        if(id_ex_latch.controlSignals.flagWrite) {
+            drawFlagBox(datapath.gc, "N", flagX, flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isN());
+            drawFlagBox(datapath.gc, "Z", flagX + flagBoxSize, flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isZ());
+            drawFlagBox(datapath.gc, "C", flagX + 2 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isC());
+            drawFlagBox(datapath.gc, "V", flagX + 3 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isV());
+        }
+        drawALUBlock(datapath.gc, true);
+        drawShiftLeft2(datapath.gc, true);
+        drawBranchAdder(datapath.gc, true);
+        if(((simManager.getSimulator().cpu.getFlagsRegister().isN() && id_ex_latch.controlSignals.flagBranch) 
+            || (simManager.getSimulator().cpu.getFlagsRegister().isC() && id_ex_latch.controlSignals.flagBranch) 
+            || (simManager.getSimulator().cpu.getFlagsRegister().isV() && id_ex_latch.controlSignals.flagBranch)) 
+            || (id_ex_latch.controlSignals.uncondBranch) 
+            || (simManager.getSimulator().cpu.getFlagsRegister().isZ() && id_ex_latch.controlSignals.zeroBranch))
+        {
+        drawMux(datapath.gc, muxPcSourceX, muxPcSourceY, muxWidth, muxHeight, false, true); // MUX PC Source
+        } else {
+        drawMux(datapath.gc, muxPcSourceX, muxPcSourceY, muxWidth, muxHeight, true, false); // MUX PC Source
+        }
+
     }
 
-    public void simulateWriteback(Runnable onDone) {
-        // this.clearAllBlocks();
-        System.out.println("============== START WRITE STAGE ============");
-        simManager = SimulationManager.getInstance();
-        simManager.stepSimulation(5);
-        simManager = SimulationManager.getInstance();
-        var mem_wb_latch = simManager.getSimulator().mem_wb_latch;
+public void simulateMemoryAccess(Runnable onDone) {
+    System.out.println("============== START MEMORY STAGE ============");
+    simManager = SimulationManager.getInstance();
+    simManager.stepSimulation(4);
+    simManager = SimulationManager.getInstance();
+    var ex_mem_latch = simManager.getSimulator().ex_mem_latch;
 
-        String aluResult = "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(mem_wb_latch.aluResult), 0, 7);
-        String memData = mem_wb_latch.dataReadFromMemory == 0 ? "0" : "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(mem_wb_latch.dataReadFromMemory), 0, 7);
-        String finalResult = mem_wb_latch.controlSignals.memToReg ? memData : aluResult;
+    drawDataMemory(datapath.gc, true);
+    String address = "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(ex_mem_latch.aluResult), 0, 15);
+    String data = "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(ex_mem_latch.dataToWriteToMemory), 0, 15);
+    
+    List<MovingTextBlock> blocksInStage = List.of(
+        MovingBlockFactory.aluToMemoryAddress(datapath, address),
+        MovingBlockFactory.writeDataToMemory(datapath, data)
+    );
+    // Thêm tất cả vào MemoryBlocks
+    MemoryBlocks.addAll(blocksInStage);
 
-        MovingTextBlock aluToMux = MovingBlockFactory.aluToMemMux(datapath, aluResult);
-        MovingTextBlock memToMux = MovingBlockFactory.memoryReadToMux(datapath, memData);
+    runBlocksInParallel(blocksInStage, onDone);
+}
 
-        AtomicInteger completionCounter = new AtomicInteger(0);
-        final int TOTAL_TASKS = 2; // Hai khối chạy vào Mux
-        Runnable onMuxInputDone = () -> {
-            if (completionCounter.incrementAndGet() == TOTAL_TASKS) {
-                // Sau khi cả hai vào Mux, khối ghi lại mới bắt đầu
-                MovingTextBlock wbBlock = MovingBlockFactory.writebackToRegisterFile(datapath, finalResult);
-                wbBlock.setOnPathCompleted(onDone); // Khi khối cuối cùng này xong, giai đoạn kết thúc
-                addAndStartBlock(wbBlock);
-            }
-        };
-
-        aluToMux.setOnPathCompleted(onMuxInputDone);
-        memToMux.setOnPathCompleted(onMuxInputDone);
-
-        addAndStartBlock(aluToMux);
-        addAndStartBlock(memToMux);
+public void simulateWriteback(Runnable onDone) {
+    System.out.println("============== START WRITE STAGE ============");
+    simManager = SimulationManager.getInstance();
+    simManager.stepSimulation(5);
+    simManager = SimulationManager.getInstance();
+    var mem_wb_latch = simManager.getSimulator().mem_wb_latch;
+    var id_ex_latch = simManager.getSimulator().id_ex_latch;
+    if(id_ex_latch.controlSignals.memToReg)
+    {
+        drawMemMux(datapath.gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, true, false);
     }
+    else
+    {
+        drawMemMux(datapath.gc, muxMemToRegX, muxMemToRegY, muxWidth, muxHeight, false, true);
+    }
+    String aluResult = "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(mem_wb_latch.aluResult), 0, 7);
+    String memData = mem_wb_latch.dataReadFromMemory == 0 ? "0" : "(64bit)..." + BitUtils.toBinaryString(BitUtils.getLow32Bits(mem_wb_latch.dataReadFromMemory), 0, 7);
+    String finalResult = mem_wb_latch.controlSignals.memToReg ? memData : aluResult;
+
+    MovingTextBlock aluToMux = MovingBlockFactory.aluToMemMux(datapath, aluResult);
+    MovingTextBlock memToMux = MovingBlockFactory.memoryReadToMux(datapath, memData);
+
+    // Thêm vào WritebackBlocks
+    WritebackBlocks.add(aluToMux);
+    WritebackBlocks.add(memToMux);
+
+    AtomicInteger completionCounter = new AtomicInteger(0);
+    final int TOTAL_TASKS = 2;
+    Runnable onMuxInputDone = () -> {
+        if (completionCounter.incrementAndGet() == TOTAL_TASKS) {
+            MovingTextBlock wbBlock = MovingBlockFactory.writebackToRegisterFile(datapath, finalResult);
+            // Thêm vào WritebackBlocks
+            WritebackBlocks.add(wbBlock);
+
+            wbBlock.setOnPathCompleted(onDone);
+            addAndStartBlock(wbBlock);
+        }
+    };
+
+    aluToMux.setOnPathCompleted(onMuxInputDone);
+    memToMux.setOnPathCompleted(onMuxInputDone);
+
+    addAndStartBlock(aluToMux);
+    addAndStartBlock(memToMux);
+}
 
     public void simulateEndStage(Runnable onDone) {
         // this.clearAllBlocks();
@@ -217,7 +297,7 @@ public class TextBlockController extends StackPane {
     // CÁC PHƯƠNG THỨC TRỢ GIÚP VÀ QUẢN LÝ
     // =======================================================================
 
-    private void runBlocksInParallel(List<MovingTextBlock> blocks, Runnable onAllDone) {
+    public void runBlocksInParallel(List<MovingTextBlock> blocks, Runnable onAllDone) {
         if (blocks == null || blocks.isEmpty()) {
             if (onAllDone != null) onAllDone.run();
             return;
@@ -242,9 +322,11 @@ public class TextBlockController extends StackPane {
         if (block == null) return;
         datapath.getChildren().add(block);
         activeBlocks.add(block);
+        block.setRate(currentRate); // <-- Đảm bảo block mới cũng nhận đúng tốc độ hiện tại!
         block.startMoving();
     }
 
+    
     private void removeBlock(MovingTextBlock block) {
         block.stopMoving();
         FadeTransition fade = new FadeTransition(Duration.seconds(0.5), block);
@@ -265,6 +347,30 @@ public class TextBlockController extends StackPane {
         datapath.draw();
     }
 
+    public void clearAllBlocksInStage(List<MovingTextBlock> stageBlocks) {
+        if (stageBlocks == null || stageBlocks.isEmpty()) {
+            return;
+        }
+        
+        for (MovingTextBlock block : stageBlocks) {
+            // Dừng animation của block
+            block.stopMoving();
+            
+            // Tạo fade out effect
+            FadeTransition fade = new FadeTransition(Duration.seconds(0.5), block);
+            fade.setToValue(0);
+            fade.setOnFinished(e -> {
+                // Xóa khỏi UI và activeBlocks nhưng KHÔNG xóa khỏi stageBlocks
+                datapath.getChildren().remove(block);
+                activeBlocks.remove(block);
+            });
+            fade.play();
+        }
+        
+        // Không clear stageBlocks - chỉ ẩn hiển thị thôi
+        // stageBlocks.clear(); // <- KHÔNG làm điều này!
+    }
+
     public void pauseAll() {
         for (MovingTextBlock block : activeBlocks) {
             block.pause();
@@ -278,6 +384,7 @@ public class TextBlockController extends StackPane {
     }
 
     public void setAllRates(double rate) {
+        this.currentRate = rate;
         for (MovingTextBlock block : activeBlocks) {
             block.setRate(rate);
         }
@@ -289,4 +396,28 @@ public class TextBlockController extends StackPane {
             block.step(stepDuration);
         }
     }
+
+    public static List<Point> getAllBlockEndPoints(List<MovingTextBlock> blocks) {
+        List<Point> endPoints = new ArrayList<>();
+        for (MovingTextBlock block : blocks) {
+            List<PathSegment> path = block.getPath();
+            if (path != null && !path.isEmpty()) {
+                PathSegment last = path.get(path.size() - 1);
+                endPoints.add(last.end);
+            }
+        }
+        return endPoints;
+    }
+    public static void moveBlocksToEndpoint(List<MovingTextBlock> blocks) {
+        for (MovingTextBlock block : blocks) {
+            List<PathSegment> path = block.getPath();
+            if (path != null && !path.isEmpty()) {
+                PathSegment last = path.get(path.size() - 1);
+                block.setTranslateX(last.end.x);
+                block.setTranslateY(last.end.y);
+            }
+        }
+    }
+
+    
 }

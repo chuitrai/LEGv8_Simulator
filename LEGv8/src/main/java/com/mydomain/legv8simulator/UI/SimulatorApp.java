@@ -36,6 +36,8 @@ public class SimulatorApp extends Application {
     public static InstructionMemoryWindow instrWin;
     public static LEGv8Datapath datapathPane;
     public static AnimationControllerWindow animController;
+    public static final java.io.File[] selectedFile = {null};
+    public static final java.io.File file = new java.io.File("resources/assembly_examples/example_1.s");
 
 
     @Override
@@ -81,8 +83,7 @@ public class SimulatorApp extends Application {
             new javafx.stage.FileChooser.ExtensionFilter("All Files", "*.*")
         );
         
-        final java.io.File[] selectedFile = {null};
-        java.io.File file = new java.io.File("resources/assembly_examples/example_1.s");
+
         if (file != null) {
                 selectedFile[0] = file;
                 simManager.setCurrentFileName(file.getName());
@@ -166,6 +167,8 @@ public class SimulatorApp extends Application {
 
         TextBlockController textBlockController = new TextBlockController(datapathPane);
 
+        
+
 
         animController = new AnimationControllerWindow(textBlockController);
         primaryStage.setTitle("LEGv8 Datapath Visualization");
@@ -173,6 +176,7 @@ public class SimulatorApp extends Application {
         primaryStage.show();
         animController.show();
 
+        
         animController.writebackBtn.setOnAction(e -> {
                 textBlockController.simulateWriteback(null);
                   regWin.updateRegisterWindow();

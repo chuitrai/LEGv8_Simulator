@@ -8,13 +8,19 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
+import main.java.com.mydomain.legv8simulator.UI.TextFileEditor;
+import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
+import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.*;
+
 
 public class LEGv8Datapath extends Pane {
 
     public Canvas canvas;
     public GraphicsContext gc;
+    private SimulationManager simManager = SimulationManager.getInstance();
     
     // Predefined paths cho các loại instruction
     // private Map<String, List<Point>> instructionPaths;
@@ -141,8 +147,6 @@ public void updateLayoutVars(double width, double height) {
     public LEGv8Datapath() {
         setupDatapathComponents();
         
-        // setupAnimationPaths();
-        // initializeAnimations();
     }
     private void setupDatapathComponents() {
         canvas = new Canvas(); 

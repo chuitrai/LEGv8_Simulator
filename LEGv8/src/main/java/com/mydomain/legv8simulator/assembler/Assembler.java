@@ -176,14 +176,27 @@ public class Assembler {
                 System.out.println("Offset: " + BitUtils.extractBits((opcode << 21) | ((offset & 0xFFF) << 12) | (0 << 10) | (rn_d << 5) | rd_d, 12, 21));
                 return (opcode << 21) | ((offset & 0xFFF) << 12) | (0 << 10) | (rn_d << 5) | rd_d;
             case B_FORMAT:
-                checkOperands(pInstr, 2);
-                int rn_b = parseRegister(operands[0]);
-                int offset_b = parseImmediate(operands[1], 19); // Offset 19 bit
-                // Kiểm tra giới hạn của offset (giả sử -524288 đến 524287)
-                if (offset_b < -524288 || offset_b > 524287) {
-                    throw new AssemblyException("Offset out of range: " + offset_b);
+                checkOperands(pInstr, 1); // B-format chỉ có 1 operand (target label/address)
+                            int targetAddress;
+                if (operands[0].startsWith("0x") || operands[0].startsWith("0X")) {
+                    // Nếu là địa chỉ hex trực tiếp
+                    targetAddress = Integer.parseInt(operands[0].substring(2), 16);
+                } else if (operands[0].startsWith("#")) {
+                    // Nếu là immediate value
+                    targetAddress = parseImmediate(operands[0], 26);
+                } else {
+                    targetAddress = symbolTable.getAddress(operands[0]);
                 }
-                return (opcode << 21) | ((offset_b & 0x3FFFF) << 5) | rn_b;
+                // Tính offset từ địa chỉ hiện tại đến địa chỉ đích
+                int offset_b = (targetAddress - currentAddress) / 4; // Chia cho 4 vì offset_b tính theo số lệnh
+                int maxOffset = (1 << 25) - 1; // 2^25 - 1 = 33554431
+                int minOffset = -(1 << 25);    // -2^25 = -33554432
+                if (offset_b < minOffset || offset_b > maxOffset) {
+                    throw new AssemblyException("Branch offset_b out of range: " + offset_b + " (target: " + targetAddress + ", current: " + currentAddress + ")");
+                }
+                    
+                // Mã hóa: opcode (6 bit) + offset_b (26 bit)
+                return (opcode << 26) | (offset_b & 0x3FFFFFF);
             case CB_FORMAT:
                 // in ra thông tin pInstr để dễ debug
                 System.out.println("Check CB Format: " + pInstr.toString());

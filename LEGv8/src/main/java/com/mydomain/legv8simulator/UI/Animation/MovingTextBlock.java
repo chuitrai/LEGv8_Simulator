@@ -1,6 +1,7 @@
 package main.java.com.mydomain.legv8simulator.UI.Animation;
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -12,6 +13,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import main.java.com.mydomain.legv8simulator.UI.AnimationControllerWindow;
 import main.java.com.mydomain.legv8simulator.UI.datapath.LEGv8Datapath;
 import main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.*;
 import main.java.com.mydomain.legv8simulator.core.SimulationManager;
@@ -61,6 +63,12 @@ public class MovingTextBlock extends StackPane {
     private int currentSegmentIndex;
     private Timeline currentAnimation;
     private Runnable onPathCompleted;
+    private Duration pausedTime;
+    private double pausedTranslateX;
+    private double pausedTranslateY;
+    private boolean isPaused = false;
+    public static List<Timeline> animations = new ArrayList<>();
+
 
     public void setOnPathCompleted(Runnable onPathCompleted) {
         this.onPathCompleted = onPathCompleted;
@@ -78,6 +86,9 @@ public class MovingTextBlock extends StackPane {
         this.content = content;
         this.path = new ArrayList<>();
         this.currentSegmentIndex = 0;
+        this.pausedTime = null;
+        this.pausedTranslateX = 0;
+        this.pausedTranslateY = 0;
         
         background = new Rectangle();
         background.setFill(Color.web(color));
@@ -100,6 +111,9 @@ public class MovingTextBlock extends StackPane {
         this.content = content;
         this.path = new ArrayList<>();
         this.currentSegmentIndex = 0;
+        this.pausedTime = null;
+        this.pausedTranslateX = 0;
+        this.pausedTranslateY = 0;
         
         background = new Rectangle();
         background.setFill(color);
@@ -119,6 +133,9 @@ public class MovingTextBlock extends StackPane {
     }
     public MovingTextBlock(String content) {
         this(content, "#0078D7"); // Màu mặc định
+        this.pausedTime = null;
+        this.pausedTranslateX = 0;
+        this.pausedTranslateY = 0;
     }
     
     private void updateSize() {
@@ -158,7 +175,7 @@ public class MovingTextBlock extends StackPane {
     
     // Bắt đầu di chuyển theo path đã định sẵn
     public void startMoving() {
-        if (path.isEmpty()) return;
+        if (path.isEmpty()) return; 
         
         currentSegmentIndex = 0;
         // Đặt vị trí ban đầu
@@ -168,36 +185,46 @@ public class MovingTextBlock extends StackPane {
         moveToNextSegment();
     }
     
-private void moveToNextSegment() {
-    if (currentSegmentIndex >= path.size()) {
-        onPathCompleted();
-        return;
+    private void moveToNextSegment() {
+        if (currentSegmentIndex >= path.size()) {
+            onPathCompleted();
+            return;
+        }
+        if(isPaused) {
+            pause();
+            return;
+        }
+
+        PathSegment segment = path.get(currentSegmentIndex); 
+        // Tính toán vị trí relative từ vị trí hiện tại
+        double currentX = getLayoutX() + getTranslateX();
+        double currentY = getLayoutY() + getTranslateY();
+        double toX = getTranslateX() + (segment.end.x - this.getWidth()- currentX);
+        double toY = getTranslateY() + (segment.end.y - this.getHeight()/2 - currentY);
+
+        currentAnimation = new Timeline();
+        currentAnimation.getKeyFrames().add(new KeyFrame(Duration.seconds(segment.duration),
+            new KeyValue(this.translateXProperty(), toX),
+            new KeyValue(this.translateYProperty(), toY)
+        ));
+        currentAnimation.setRate(AnimationControllerWindow.rate);
+        animations.add(currentAnimation);
+
+        currentAnimation.setOnFinished(e -> {
+            setLayoutX(segment.end.x - this.getWidth());
+            setLayoutY(segment.end.y - this.getHeight()/2);
+            setTranslateX(0);
+            setTranslateY(0);
+            currentSegmentIndex++;
+        // Gọi trực tiếp thay vì qua Timeline
+            Platform.runLater(this::moveToNextSegment);
+        });
+        if (pausedTime != null) {
+                currentAnimation.jumpTo(pausedTime);
+                pausedTime = null;
+        }
+        currentAnimation.play();
     }
-
-    PathSegment segment = path.get(currentSegmentIndex);
-
-    // Tính toán vị trí relative từ vị trí hiện tại
-    double currentX = getLayoutX() + getTranslateX();
-    double currentY = getLayoutY() + getTranslateY();
-    double toX = getTranslateX() + (segment.end.x - this.getWidth()- currentX);
-    double toY = getTranslateY() + (segment.end.y - this.getHeight()/2 - currentY);
-
-    currentAnimation = new Timeline();
-    currentAnimation.getKeyFrames().add(new KeyFrame(Duration.seconds(segment.duration),
-        new KeyValue(this.translateXProperty(), toX),
-        new KeyValue(this.translateYProperty(), toY)
-    ));
-    currentAnimation.setOnFinished(e -> {
-        setLayoutX(segment.end.x - this.getWidth());
-        setLayoutY(segment.end.y - this.getHeight()/2);
-        setTranslateX(0);
-        setTranslateY(0);
-        currentSegmentIndex++;
-        Timeline pause = new Timeline(new KeyFrame(Duration.seconds(0.1), event -> moveToNextSegment()));
-        pause.play();
-    });
-    currentAnimation.play();
-}
     
     // Được gọi khi hoàn thành toàn bộ path
     protected void onPathCompleted() {
@@ -208,7 +235,11 @@ private void moveToNextSegment() {
     // Dừng animation hiện tại
     public void stopMoving() {
         if (currentAnimation != null) {
+            pausedTime = currentAnimation.getCurrentTime();
+            pausedTranslateX = getTranslateX();
+            pausedTranslateY = getTranslateY();
             currentAnimation.stop();
+            currentAnimation = null; // Đặt lại Timeline
         }
     }
     
@@ -231,18 +262,32 @@ private void moveToNextSegment() {
      * Tạm dừng animation.
      */
     public void pause() {
-        if (currentAnimation != null) {
-            currentAnimation.pause();
+        isPaused = true;
+        for (Timeline animation : animations) {
+            if (animation.getStatus() == Animation.Status.RUNNING) {
+                animation.pause();
+                pausedTime = animation.getCurrentTime();
+                pausedTranslateX = getTranslateX();
+                pausedTranslateY = getTranslateY();
+            }
         }
+
     }
 
     /**
      * Tiếp tục animation đã bị tạm dừng.
      */
     public void resume() {
-        if (currentAnimation != null) {
-            currentAnimation.play();
+        isPaused = false;
+        for (Timeline animation : animations) {
+            if (animation.getStatus() == Animation.Status.PAUSED) {
+                setTranslateX(pausedTranslateX);
+                setTranslateY(pausedTranslateY);
+                animation.jumpTo(pausedTime);
+                animation.play();
+            }
         }
+        pausedTime = null; // Reset paused time
     }
 
     /**
@@ -270,4 +315,9 @@ private void moveToNextSegment() {
             currentAnimation.jumpTo(newTime);
         }
     }
+
+    public List<PathSegment> getPath() {
+        return new ArrayList<>(path); // Trả về một bản sao của path để tránh thay đổi bên ngoài
+    }
 }
+

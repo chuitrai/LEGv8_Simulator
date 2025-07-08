@@ -1,6 +1,4 @@
-ADDI X1, X31, #50
+func: ADDI X1, X31, #50
 ADDI X2, X31, #10
-SUB  X3, X1, X2
-STUR X3, [XZR , #100]
-LDUR X5, [XZR , #100]
+B func
 HALT

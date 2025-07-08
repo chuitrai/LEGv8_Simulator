@@ -172,6 +172,18 @@ public class SimulationManager {
             return false;
         }
     }
+
+    public void cycleSimulation() {
+        System.out.println(" cycleSimulation was Run");
+        try {
+            this.simulator.isRunning = true;
+            simulator.doFullClockCycle(); 
+            this.simulator.isRunning = false;
+        } catch (Exception e) {
+            this.isRunning = false;
+            System.err.println("Step simulation failed: " + e.getMessage());
+        }
+    }
     
     /**
      * Lấy thông tin register

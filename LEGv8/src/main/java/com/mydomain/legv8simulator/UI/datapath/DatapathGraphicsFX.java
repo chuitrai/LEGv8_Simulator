@@ -441,7 +441,7 @@ public final class DatapathGraphicsFX {
         gc.beginPath();
         gc.moveTo(x + width, y + height / 2);
         gc.lineTo(x + width, bottomArcCenterY);
-        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, 180);
+        gc.arc(x + radius, bottomArcCenterY, radius, radius, 0, -180);
         gc.lineTo(x, y + height / 2);
         gc.closePath();
         gc.fill();

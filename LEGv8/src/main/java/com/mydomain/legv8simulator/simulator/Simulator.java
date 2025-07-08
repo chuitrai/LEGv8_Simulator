@@ -357,4 +357,5 @@ public class Simulator extends Observable_demo {
     public DatapathSnapshot createSnapshot() {
         return new DatapathSnapshot(if_id_latch, id_ex_latch, ex_mem_latch, mem_wb_latch);
     }
+
 }
