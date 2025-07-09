@@ -23,6 +23,11 @@ public class TextBlockController extends StackPane {
     private SimulationManager simManager;
     private double currentRate = 1.0; // Tốc độ mặc định là 1x
 
+    private boolean isN = false;
+    private boolean isZ = false;
+    private boolean isC = false;
+    private boolean isV = false;
+
     public static List<MovingTextBlock> FetchBlocks = new ArrayList<>();
     public static List<MovingTextBlock> DecodeBlocks = new ArrayList<>();
     public static List<MovingTextBlock> ExecuteBlocks = new ArrayList<>();
@@ -198,11 +203,15 @@ public void simulateDecode(Runnable onDone) {
             drawMux(datapath.gc, muxAluInputX, muxAluInputY, muxWidth, muxHeight, true, false); // MUX ALU Source
         }
         if(id_ex_latch.controlSignals.flagWrite) {
-            drawFlagBox(datapath.gc, "N", flagX, flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isN());
-            drawFlagBox(datapath.gc, "Z", flagX + flagBoxSize, flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isZ());
-            drawFlagBox(datapath.gc, "C", flagX + 2 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isC());
-            drawFlagBox(datapath.gc, "V", flagX + 3 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2, simManager.getSimulator().cpu.getFlagsRegister().isV());
+            isN = simManager.getSimulator().cpu.getFlagsRegister().isN();
+            isZ = simManager.getSimulator().cpu.getFlagsRegister().isZ();
+            isC = simManager.getSimulator().cpu.getFlagsRegister().isC();
+            isV = simManager.getSimulator().cpu.getFlagsRegister().isV();
         }
+        drawFlagBox(datapath.gc, "N", flagX, flagY, flagBoxSize, baseFontSize - 2, isN);
+        drawFlagBox(datapath.gc, "Z", flagX + flagBoxSize, flagY, flagBoxSize, baseFontSize - 2, isZ);
+        drawFlagBox(datapath.gc, "C", flagX + 2 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2, isC);
+        drawFlagBox(datapath.gc, "V", flagX + 3 * (flagBoxSize), flagY, flagBoxSize, baseFontSize - 2, isV);
         drawALUBlock(datapath.gc, true);
         drawShiftLeft2(datapath.gc, true);
         drawBranchAdder(datapath.gc, true);

@@ -176,4 +176,7 @@ public class InstructionMemoryWindow {
     public TableView<Instruction> getTable() {
         return instrTable;
     }
+    public int getSelectedRow() {
+        return instrTable.getSelectionModel().getSelectedIndex();
+    }
 } 

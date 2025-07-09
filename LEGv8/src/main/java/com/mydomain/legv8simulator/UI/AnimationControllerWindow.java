@@ -20,6 +20,7 @@ import main.java.com.mydomain.legv8simulator.core.SimulationManager;
 
 import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.instrWin;
 import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.regWin;
+import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.ellipseHeight;
 
 /**
  * Cửa sổ điều khiển mô phỏng, bao gồm cả việc kích hoạt các giai đoạn
@@ -33,7 +34,7 @@ public class AnimationControllerWindow {
     public SimulationManager prevManager, simManager;
 
     // UI Controls - Global
-    public Button playBtn, playPauseBtn, stepBtn, resetBtn;
+    public Button playBtn, playPauseBtn, stepBtn, resetBtn, skipBtn;
     public Slider speedSlider;
     public Label speedValue;
 
@@ -106,20 +107,19 @@ public class AnimationControllerWindow {
         
         // Play/Pause/Step buttons
         HBox buttonBox = new HBox(10);
-        buttonBox.setAlignment(Pos.CENTER_LEFT);
+        buttonBox.setAlignment(Pos.CENTER);
 
         resetBtn = createSimButton("↺ Reset All", "#c0392b", 120);
-        
-        playPauseBtn = new Button("▶ Play");
-        playPauseBtn.setPrefWidth(120);
-        playPauseBtn.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;");
-        
 
-        buttonBox.getChildren().addAll(playPauseBtn, resetBtn);
-        
+        playPauseBtn = createSimButton("▶ Play", "#27ae60", 120);
+
+        skipBtn = createSimButton("⏭ Skip", "#8e44ad", 120);
+
+        buttonBox.getChildren().addAll(playPauseBtn, resetBtn, skipBtn);
+
         // Speed slider
         HBox speedBox = new HBox(10);
-        speedBox.setAlignment(Pos.CENTER_LEFT);
+        speedBox.setAlignment(Pos.CENTER);
         Label speedLabel = new Label("Tốc độ:");
         speedSlider = new Slider(0.1, 5.0, 1.0);
         speedSlider.setPrefWidth(180);
@@ -212,6 +212,7 @@ public class AnimationControllerWindow {
         // Đảm bảo tốc độ được set ngay khi tạo cửa sổ
         speedValue.setText(String.format("%.1fx", speedSlider.getValue()));
         
+
         resetBtn.setOnAction(e -> {
             textBlockController.clearAllBlocks();
             simManager = SimulationManager.getInstance();
@@ -228,6 +229,7 @@ public class AnimationControllerWindow {
         backCycleBtn.setOnAction(e -> backCycle());
         nextCycleBtn.setOnAction(e -> { nextCycle();});
         backBtn.setOnAction(e -> backStage());
+        skipBtn.setOnAction(e -> skip());
 
         fetchBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateFetch(null), "Đang mô phỏng FETCH...", CpuStage.FETCH));
         decodeBtn.setOnAction(e -> runSingleStage(() -> textBlockController.simulateDecode(null), "Đang mô phỏng DECODE...", CpuStage.DECODE));
@@ -238,7 +240,7 @@ public class AnimationControllerWindow {
 
     private void runSingleStage(Runnable simulation, String statusMessage, CpuStage stage) {
         updateStatus(statusMessage);
-        currentStage = stage; // Cập nhật giai đoạn hiện tại
+        this.currentStage = stage; // Cập nhật giai đoạn hiện tại
         simulation.run();
         regWin.updateRegisterWindow();
         textBlockController.setAllRates(rate);
@@ -256,12 +258,28 @@ public class AnimationControllerWindow {
         updatePlayPauseButtonState();
     }
 
+    private void skip()
+    {
+        int selectedRow = instrWin.getSelectedRow();
+        textBlockController.clearAllBlocks();
+        simManager = SimulationManager.getInstance();
+        simManager.getSimulator().reset();
+        for (int i = 0; i < selectedRow; i++) {
+            // Chạy từng chu kỳ cho đến khi đến dòng đã chọn
+            cycleCount++;
+            simManager.cycleSimulation();
+        }
+        instrWin.loadInstructions();
+        regWin.updateRegisterWindow();
+    }
+
     private void togglePlay() {
     isPaused = false;
     textBlockController.clearAllBlocks();
     simManager = SimulationManager.getInstance();
     simManager.getSimulator().reset();
     updateStatus("Bắt đầu Fetch...");
+    cycleCount = 0; // Reset cycle count
     runCycle();
     updatePlayPauseButtonState();
     }
@@ -297,6 +315,7 @@ public class AnimationControllerWindow {
         System.out.println("Back Cycle: " + cycleCount);
     }
 
+
     private void nextStage(CpuStage currentStage)
     {
         simManager = SimulationManager.getInstance();
@@ -315,6 +334,12 @@ public class AnimationControllerWindow {
                 textBlockController.simulateExecute(null);
                 break;
             case EXECUTE:
+                if (simManager.getSimulator().snapshot.ex_mem_latch == null) {
+                    textBlockController.clearAllBlocks();
+                    regWin.updateRegisterWindow();
+                    updateStatus("Đã hoàn thành chương trình.");
+                    return;
+                }
                 this.currentStage = CpuStage.MEMORY_ACCESS; // Chuyển sang giai đoạn tiếp theo
                 updateStatus("Bắt đầu Memory Access...");
                 textBlockController.simulateMemoryAccess(null);
@@ -336,6 +361,8 @@ public class AnimationControllerWindow {
         regWin.updateRegisterWindow();
     }
 
+    
+
     private void backStage() {
     
     }
@@ -344,12 +371,17 @@ public class AnimationControllerWindow {
         regWin.updateRegisterWindow();
         instrWin.loadInstructions();
         textBlockController.setAllRates(rate);
+        if(simManager.getSimulator().cpu.getPC().getValue()/4 >= simManager.assemblyLines.size()) {
+            updateStatus("Đã hoàn thành chương trình.");
+            return;
+        }
         currentStage = CpuStage.FETCH;
         executeCurrentStage();
     }
 
     private void executeCurrentStage() {
         regWin.updateRegisterWindow();
+
         switch (currentStage) {
             case FETCH:
                 updateStatus("Bắt đầu Fetch...");
@@ -360,12 +392,20 @@ public class AnimationControllerWindow {
                 textBlockController.simulateDecode(this::onDecodeComplete);
                 break;
             case EXECUTE:
-                updateStatus("Bắt đầu Execute...");
-                textBlockController.simulateExecute(this::onExecuteComplete);
+                    updateStatus("Bắt đầu Execute...");
+                    textBlockController.simulateExecute(this::onExecuteComplete);
                 break;
             case MEMORY_ACCESS:
-                updateStatus("Bắt đầu Memory Access...");
-                textBlockController.simulateMemoryAccess(this::onMemoryAccessComplete);
+                if(simManager.getSimulator().snapshot.ex_mem_latch == null) {
+                    textBlockController.clearAllBlocks();
+                    regWin.updateRegisterWindow();
+                    updateStatus("Đã hoàn thành chương trình.");
+                    return;
+                }
+                else{
+                    updateStatus("Bắt đầu Memory Access...");
+                    textBlockController.simulateMemoryAccess(this::onMemoryAccessComplete);
+                }
                 break;
             case WRITEBACK:
                 updateStatus("Bắt đầu Writeback...");

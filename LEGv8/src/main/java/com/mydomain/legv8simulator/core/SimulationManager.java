@@ -20,7 +20,7 @@ public class SimulationManager {
     
     // Dữ liệu program
     private int[] machineCode;
-    private List<String> assemblyLines;
+    public List<String> assemblyLines;
     private String currentFileName;
     
     // Trạng thái simulation

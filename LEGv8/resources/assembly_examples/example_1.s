@@ -1,4 +1,4 @@
 func: ADDI X1, X31, #50
 ADDI X2, X31, #10
 B func
-HALT
+
