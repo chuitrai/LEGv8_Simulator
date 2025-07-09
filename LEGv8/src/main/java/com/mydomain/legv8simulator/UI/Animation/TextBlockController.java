@@ -50,10 +50,6 @@ public class TextBlockController extends StackPane {
 public void simulateFetch(Runnable onDone) {
     clearAllBlocks();
     FetchBlocks.clear();
-    DecodeBlocks.clear();
-    ExecuteBlocks.clear();
-    MemoryBlocks.clear();
-    WritebackBlocks.clear();
         System.out.println("============== START FETCH STAGE ============");
     drawPC(datapath.gc, true);
     simManager = SimulationManager.getInstance();
@@ -102,6 +98,7 @@ public void simulateFetch(Runnable onDone) {
 
 public void simulateDecode(Runnable onDone) {
     System.out.println("============== START DECODE STAGE ============");
+    DecodeBlocks.clear();
     simManager = SimulationManager.getInstance();
     simManager.stepSimulation(2);
     int instr = simManager.getSimulator().snapshot.if_id_latch.instructionMachineCode;
@@ -132,6 +129,7 @@ public void simulateDecode(Runnable onDone) {
     public void simulateExecute(Runnable onDone) {
         // this.clearAllBlocks();
         System.out.println("============== START EXECUTE STAGE ============");
+        ExecuteBlocks.clear();
         simManager = SimulationManager.getInstance();
         simManager.stepSimulation(3);
         simManager = SimulationManager.getInstance();
@@ -230,6 +228,7 @@ public void simulateDecode(Runnable onDone) {
 
 public void simulateMemoryAccess(Runnable onDone) {
     System.out.println("============== START MEMORY STAGE ============");
+    MemoryBlocks.clear();
     simManager = SimulationManager.getInstance();
     simManager.stepSimulation(4);
     simManager = SimulationManager.getInstance();
@@ -252,6 +251,7 @@ public void simulateMemoryAccess(Runnable onDone) {
 public void simulateWriteback(Runnable onDone) {
     System.out.println("============== START WRITE STAGE ============");
     simManager = SimulationManager.getInstance();
+    WritebackBlocks.clear();
     simManager.stepSimulation(5);
     simManager = SimulationManager.getInstance();
     var mem_wb_latch = simManager.getSimulator().mem_wb_latch;
@@ -377,7 +377,7 @@ public void simulateWriteback(Runnable onDone) {
         }
         
         // Không clear stageBlocks - chỉ ẩn hiển thị thôi
-        // stageBlocks.clear(); // <- KHÔNG làm điều này!
+        stageBlocks.clear(); // 
     }
 
     public void pauseAll() {

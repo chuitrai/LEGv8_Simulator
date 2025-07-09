@@ -58,7 +58,7 @@ public class AnimationControllerWindow {
         FETCH, DECODE, EXECUTE, MEMORY_ACCESS, WRITEBACK
     }
 
-    private CpuStage currentStage = CpuStage.FETCH;
+    private CpuStage currentStage = null;
 
     public AnimationControllerWindow(TextBlockController textBlockController) {
         this.textBlockController = textBlockController;
@@ -202,7 +202,7 @@ public class AnimationControllerWindow {
         playBtn.setOnAction(e -> togglePlay());
         playPauseBtn.setOnAction(e -> togglePlayPause());
         stepBtn.setOnAction(e -> {
-            nextStage(currentStage);
+            nextStage();
         });
         
         speedSlider.valueProperty().addListener((obs, oldV, newV) -> {
@@ -246,6 +246,12 @@ public class AnimationControllerWindow {
         simulation.run();
         regWin.updateRegisterWindow();
         textBlockController.setAllRates(rate);
+        if (stage == CpuStage.WRITEBACK) {
+            cycleCount++;
+            updateStatus("Writeback xong. Kết thúc chu kỳ.");
+            instrWin.loadInstructions();
+            textBlockController.simulateFetch(null); // Reset về FETCH để bắt đầu chu kỳ mới
+        }
     }
     
     private void togglePlayPause() {
@@ -281,7 +287,7 @@ public class AnimationControllerWindow {
     simManager = SimulationManager.getInstance();
     simManager.getSimulator().reset();
     updateStatus("Bắt đầu Fetch...");
-    for (int i = 0; i < cycleCount; i++) {
+    for (int i = 0; i < cycleCount - 1; i++) {
             simManager.cycleSimulation();
         }
     runCycle();
@@ -291,13 +297,12 @@ public class AnimationControllerWindow {
         textBlockController.clearAllBlocks();
         SimulationManager.getInstance().getSimulator().reset();
         simManager = SimulationManager.getInstance();
-        cycleCount++;
+        System.out.println("Next Cycle: " + cycleCount);
         for (int i = 0; i < cycleCount; i++) {
             simManager.cycleSimulation();
         }
-        instrWin.loadInstructions();
-        runCycle();
-        System.out.println("Đã hoàn thành chu kỳ " + cycleCount + ".");
+        runSingleCycle();
+        System.out.println("Next Cycle: " + cycleCount);
     }
 
     private void backCycle()
@@ -306,25 +311,37 @@ public class AnimationControllerWindow {
             updateStatus("Không thể quay lại chu kỳ trước, đã ở chu kỳ đầu tiên.");
             return;
         }
+        System.out.println("Back Cycle: " + cycleCount);
         SimulationManager.getInstance().getSimulator().reset();
         simManager = SimulationManager.getInstance();
         textBlockController.clearAllBlocks();
-        cycleCount--;        
+        cycleCount -= 1; // Quay lại chu kỳ trước
         for (int i = 0; i < cycleCount; i++) {
             simManager.cycleSimulation();
         }
         instrWin.loadInstructions();
         regWin.updateRegisterWindow();
-        runCycle();
+        runSingleCycle();
         System.out.println("Back Cycle: " + cycleCount);
+        System.out.println("Back Cycle: " + cycleCount);
+
     }
 
 
-    private void nextStage(CpuStage currentStage)
+    private void nextStage()
     {
         simManager = SimulationManager.getInstance();
-        if(cycleCount == 0 && currentStage == CpuStage.FETCH) {
-            currentStage = CpuStage.WRITEBACK; // Đảm bảo bắt đầu từ FETCH
+        simManager.getSimulator().reset();
+        if(cycleCount == 0 && currentStage == null) {
+            currentStage = CpuStage.FETCH; // Đảm bảo bắt đầu từ FETCH
+            textBlockController.simulateFetch(null);
+            return;
+        }
+        for (int i = 0; i < cycleCount; i++) {
+            simManager.cycleSimulation();
+        }
+        for (int i = 1; i <= currentStage.ordinal() + 1; i++) {
+            simManager.stepSimulation(i);
         }
 
         switch (currentStage) {
@@ -359,16 +376,102 @@ public class AnimationControllerWindow {
                 updateStatus("Writeback xong. Kết thúc chu kỳ.");
                 instrWin.loadInstructions();
                 updateStatus("Bắt đầu Fetch...");
-                textBlockController.simulateFetch(null);
                 cycleCount++;
+                textBlockController.simulateFetch(null);
                 break;
         }
         regWin.updateRegisterWindow();
     }
 
     private void backStage() {
-    
+        simManager = SimulationManager.getInstance();
+        simManager.getSimulator().reset();
+        System.out.println("Back Stage: " + currentStage);
+        System.out.println("Cycle Count: " + cycleCount);
+        for (int i = 0; i < cycleCount; i++) {
+            simManager.cycleSimulation();
+        }
+        for (int i = 1; i <= currentStage.ordinal(); i++) {
+            simManager.stepSimulation(i);
+        }
+        switch (currentStage) {
+            case FETCH:
+                updateStatus("Thực hiện Fetch...");
+                textBlockController.clearAllBlocksInStage(textBlockController.FetchBlocks);
+                textBlockController.simulateFetch(null);
+                break;
+            case DECODE:
+                updateStatus("Thực hiện Decode...");
+                textBlockController.clearAllBlocksInStage(textBlockController.DecodeBlocks);
+                textBlockController.simulateDecode(null);
+                break;
+            case EXECUTE:
+                updateStatus("Thực hiện Execute...");
+                textBlockController.clearAllBlocksInStage(textBlockController.ExecuteBlocks);
+                textBlockController.simulateExecute(null);
+                break;
+            case MEMORY_ACCESS:
+                updateStatus("Thực hiện Memory Access...");
+                textBlockController.clearAllBlocksInStage(textBlockController.MemoryBlocks);
+                textBlockController.simulateMemoryAccess(null);
+                break;
+            case WRITEBACK:
+                updateStatus("Thực hiện Writeback...");
+                textBlockController.clearAllBlocksInStage(textBlockController.WritebackBlocks);
+                textBlockController.simulateWriteback(null);
+                break;
+        }
+        regWin.updateRegisterWindow();
     }
+
+    private void executeSequenceStage() {
+        switch (currentStage) {
+            case FETCH:
+                updateStatus("Bắt đầu Fetch...");
+                textBlockController.simulateFetch(this::onFetchCompleteForSingleCycle);
+                break;
+            case DECODE:
+                updateStatus("Bắt đầu Decode...");
+                textBlockController.simulateDecode(this::onDecodeCompleteForSingleCycle);
+                break;
+            case EXECUTE:
+                    updateStatus("Bắt đầu Execute...");
+                    textBlockController.simulateExecute(this::onExecuteCompleteForSingleCycle);
+                break;
+            case MEMORY_ACCESS:
+                if(simManager.getSimulator().snapshot.ex_mem_latch == null) {
+                    textBlockController.clearAllBlocks();
+                    regWin.updateRegisterWindow();
+                    updateStatus("Đã hoàn thành chương trình.");
+                    return;
+                }
+                else{
+                    updateStatus("Bắt đầu Memory Access...");
+                    textBlockController.simulateMemoryAccess(this::onMemoryAccessCompleteForSingleCycle);
+                }
+                break;
+            case WRITEBACK:
+                updateStatus("Bắt đầu Writeback...");
+                textBlockController.simulateWriteback(this::onWritebackCompleteForSingleCycle);
+                break;
+        }
+        regWin.updateRegisterWindow();
+    }
+
+    private void runSingleCycle() {
+        regWin.updateRegisterWindow();
+        instrWin.loadInstructions();
+        textBlockController.setAllRates(rate);
+        if(simManager.getSimulator().cpu.getPC().getValue()/4 >= simManager.assemblyLines.size()) {
+            textBlockController.clearAllBlocks();
+            updateStatus("Đã hoàn thành chương trình.");
+            return;
+        }
+        currentStage = CpuStage.FETCH;
+        executeSequenceStage();
+        cycleCount++;
+    }
+
     private void runCycle() {
         regWin.updateRegisterWindow();
         instrWin.loadInstructions();
@@ -380,11 +483,10 @@ public class AnimationControllerWindow {
         }
         currentStage = CpuStage.FETCH;
         executeCurrentStage();
+        cycleCount++;
     }
 
     private void executeCurrentStage() {
-        regWin.updateRegisterWindow();
-
         switch (currentStage) {
             case FETCH:
                 updateStatus("Bắt đầu Fetch...");
@@ -415,6 +517,8 @@ public class AnimationControllerWindow {
                 textBlockController.simulateWriteback(this::onWritebackComplete);
                 break;
         }
+        regWin.updateRegisterWindow();
+
     }
 
     private void onFetchComplete() {
@@ -441,11 +545,41 @@ public class AnimationControllerWindow {
         executeCurrentStage();
     }
 
+
     private void onWritebackComplete() {
         updateStatus("Writeback xong. Kết thúc chu kỳ.");
         currentStage = CpuStage.FETCH; // Reset về FETCH để bắt đầu chu kỳ mới
-        cycleCount++;
         runCycle();
+    }
+
+    private void onFetchCompleteForSingleCycle() {
+        updateStatus("Fetch xong.");
+        currentStage = CpuStage.DECODE;
+        executeSequenceStage();
+    }
+
+    private void onDecodeCompleteForSingleCycle() {
+        updateStatus("Decode xong.");
+        currentStage = CpuStage.EXECUTE;
+        executeSequenceStage();
+    }
+
+    private void onExecuteCompleteForSingleCycle() {
+        updateStatus("Execute xong.");
+        currentStage = CpuStage.MEMORY_ACCESS;
+        executeSequenceStage();
+    }
+
+    private void onWritebackCompleteForSingleCycle() {
+        updateStatus("Writeback xong. Kết thúc chu kỳ.");
+        currentStage = CpuStage.FETCH; // Reset về FETCH để bắt đầu chu kỳ mới
+    }
+
+    
+    private void onMemoryAccessCompleteForSingleCycle() {
+        updateStatus("Memory Access xong.");
+        currentStage = CpuStage.WRITEBACK;
+        executeSequenceStage();
     }
 
     private void updatePlayPauseButtonState() {
