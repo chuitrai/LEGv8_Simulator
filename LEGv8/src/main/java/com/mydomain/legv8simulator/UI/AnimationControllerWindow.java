@@ -22,6 +22,8 @@ import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.instrWin;
 import static main.java.com.mydomain.legv8simulator.UI.SimulatorApp.regWin;
 import static main.java.com.mydomain.legv8simulator.UI.datapath.DatapathGraphicsFX.ellipseHeight;
 
+import javax.swing.tree.FixedHeightLayoutCache;
+
 /**
  * Cửa sổ điều khiển mô phỏng, bao gồm cả việc kích hoạt các giai đoạn
  * và điều khiển toàn cục (play, pause, step, speed).
@@ -279,7 +281,9 @@ public class AnimationControllerWindow {
     simManager = SimulationManager.getInstance();
     simManager.getSimulator().reset();
     updateStatus("Bắt đầu Fetch...");
-    cycleCount = 0; // Reset cycle count
+    for (int i = 0; i < cycleCount; i++) {
+            simManager.cycleSimulation();
+        }
     runCycle();
     updatePlayPauseButtonState();
     }
@@ -320,8 +324,9 @@ public class AnimationControllerWindow {
     {
         simManager = SimulationManager.getInstance();
         if(cycleCount == 0 && currentStage == CpuStage.FETCH) {
-            simManager.stepSimulation(1);
+            currentStage = CpuStage.WRITEBACK; // Đảm bảo bắt đầu từ FETCH
         }
+
         switch (currentStage) {
             case FETCH:
                 this.currentStage = CpuStage.DECODE; // Chuyển sang giai đoạn tiếp theo
@@ -361,17 +366,15 @@ public class AnimationControllerWindow {
         regWin.updateRegisterWindow();
     }
 
-    
-
     private void backStage() {
     
     }
-
     private void runCycle() {
         regWin.updateRegisterWindow();
         instrWin.loadInstructions();
         textBlockController.setAllRates(rate);
         if(simManager.getSimulator().cpu.getPC().getValue()/4 >= simManager.assemblyLines.size()) {
+            textBlockController.clearAllBlocks();
             updateStatus("Đã hoàn thành chương trình.");
             return;
         }
