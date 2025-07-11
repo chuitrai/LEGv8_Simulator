@@ -49,7 +49,7 @@ public class RegisterWindow {
     }
 
     public void show() {
-                // Tiêu đề vàng
+        // Tiêu đề vàng
         Label title = new Label("Registers");
         title.setStyle("-fx-background-color: orange; -fx-font-weight: bold; -fx-font-size: 12px;");
         title.setMaxWidth(Double.MAX_VALUE);
@@ -68,6 +68,8 @@ public class RegisterWindow {
         VBox root = new VBox(title, regTable, status);
         Stage stage = new Stage();
         stage.setTitle("Registers");
+        stage.setX(0);
+        stage.setY(0);
 
         stage.setScene(new Scene(root, 300, 200));
         updateRegisterWindow(); // Cập nhật dữ liệu register

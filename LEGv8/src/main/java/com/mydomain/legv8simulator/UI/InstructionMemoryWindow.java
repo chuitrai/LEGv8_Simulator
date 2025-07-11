@@ -170,6 +170,8 @@ public class InstructionMemoryWindow {
         Stage stage = new Stage();
         stage.setTitle("Instruction Memory");
         stage.setScene(new Scene(root, 350, 250));
+        stage.setX(320);
+        stage.setY(0);
         stage.show();
 
     }

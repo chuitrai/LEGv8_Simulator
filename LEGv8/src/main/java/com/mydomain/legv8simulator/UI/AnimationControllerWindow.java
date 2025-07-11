@@ -72,8 +72,8 @@ public class AnimationControllerWindow {
         stage = new Stage();
         stage.setTitle("Simulation Controller");
         stage.setResizable(true);
-        stage.setX(100);
-        stage.setY(200);
+        stage.setX(0);
+        stage.setY(250);
 
         VBox root = new VBox(15);
         root.setPadding(new Insets(15));

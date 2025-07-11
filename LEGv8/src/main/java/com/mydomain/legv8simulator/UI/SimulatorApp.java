@@ -148,6 +148,14 @@ public class SimulatorApp extends Application {
     }
     
     private void openSimulationWindows(Stage primaryStage) {
+        // Mở cửa sổ datapath visualization
+        datapathPane = new LEGv8Datapath();
+        Scene scene = new Scene(datapathPane, 900, 600);
+        TextBlockController textBlockController = new TextBlockController(datapathPane);
+        primaryStage.setTitle("LEGv8 Datapath Visualization");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+
         // Mở cửa sổ hiển thị registers
         regWin = new RegisterWindow();
         // Cập nhật với dữ liệu thực từ CPU
@@ -158,22 +166,10 @@ public class SimulatorApp extends Application {
         // Cập nhật với dữ liệu thực từ memory
         // updateInstructionWindow(instrWin);
         instrWin.show();
-        primaryStage.setX(500);
-        primaryStage.setY(100);
-
-        // Mở cửa sổ datapath visualization
-        datapathPane = new LEGv8Datapath();
-        Scene scene = new Scene(datapathPane, 900, 600);
-
-        TextBlockController textBlockController = new TextBlockController(datapathPane);
-
-        
-
+        primaryStage.setX(600);
+        primaryStage.setY(0);
 
         animController = new AnimationControllerWindow(textBlockController);
-        primaryStage.setTitle("LEGv8 Datapath Visualization");
-        primaryStage.setScene(scene);
-        primaryStage.show();
         animController.show();
 
         
@@ -193,12 +189,7 @@ public class SimulatorApp extends Application {
     
     private void runSimulation() {
         try {
-            // Chạy simulation với số bước giới hạn
-            // if (simManager.runSimulation(1)) {
-            //     System.out.println("Simulation completed successfully!");
-            // } else {
-            //     showErrorDialog("Simulation Error", "Failed to run simulation");
-            // }
+            // It empty 
         } catch (Exception e) {
             System.err.println("Simulation error: " + e.getMessage());
             showErrorDialog("Simulation Error", "Error during simulation: " + e.getMessage());
